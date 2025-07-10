@@ -19,7 +19,7 @@ import useGetRTM from './hooks/useGetRTM'
 import useGetAllMessage from './hooks/useGetAllMessage'
 
 // Sử dụng domain backend mới
-axios.defaults.baseURL = `${import.meta.env.VITE_URL_BACKEND}/api/v1`;
+axios.defaults.baseURL = "https://clone-instagram-117m.onrender.com/api/v1";
 console.log(axios.defaults.baseURL);
 
 function App() {
