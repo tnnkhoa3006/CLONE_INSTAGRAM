@@ -15,6 +15,22 @@ import { useDispatch, useSelector } from "react-redux";
 import { setPosts, setSelectedPost } from "../../redux/postSlice.js";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+dayjs.extend(relativeTime);
+
+function getInstagramTime(dateString) {
+  const now = new Date();
+  const postDate = new Date(dateString);
+  const diff = (now - postDate) / 1000; // seconds
+
+  if (diff < 60) return "just now";
+  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
+  if (diff < 2419200) return `${Math.floor(diff / 604800)}w`;
+  return postDate.toLocaleDateString();
+}
 
 const PostCard = ({ postId }) => {
   const [text, setText] = useState("");
@@ -122,7 +138,9 @@ const PostCard = ({ postId }) => {
         <div className="inline-flex text-[12px] h-[20px] items-center font-semibold cursor-pointer">{post.author.username}</div>
         <div className="flex w-[80px] h-[20px] space-x-[3px]">
           <div className="text-gray-400 text-[12px] w-[5px] h-[5px] font-extrabold">•</div>
-          <div className="text-gray-400 text-[12px] w-[50px] h-[20px] pt-[1.5px] cursor-pointer">{post.createdAt}</div>
+          <div className="text-gray-400 text-[12px] w-[50px] h-[20px] pt-[1.5px] cursor-pointer">
+            {dayjs(post.createdAt).fromNow(true)}
+          </div>
         </div>
         <MoreHorizIcon
           onClick={() => setShowOptions(true)}

@@ -16,6 +16,7 @@
     "@mui/material": "^7.1.1",
     "@reduxjs/toolkit": "^2.8.2",
     "axios": "^1.10.0",
+    "dayjs": "^1.11.13",
     "emoji-picker-react": "^4.12.2",
     "instagram_backend": "file:..",
     "react": "^19.1.0",
