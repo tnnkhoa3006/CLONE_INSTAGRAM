@@ -12,7 +12,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setSelectedUser } from '../redux/authSlice';
 import Message from '../components/message/Message';
 import { setMessages, markAllAsRead } from '../redux/chatSlice';
-import axios from 'axios';
+import api from '../services/axios';
 
 const ChatMessage = () => {
     const { user, suggestedUsers, selectedUser } = useSelector(store => store.auth);
@@ -22,7 +22,7 @@ const ChatMessage = () => {
 
     const sendMessageHandler = async (receiverId) => {
         try {
-            const res = await axios.post(`/message/send/${receiverId}`, { message: input }, {
+            const res = await api.post(`/message/send/${receiverId}`, { message: input }, {
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -39,7 +39,7 @@ const ChatMessage = () => {
 
     useEffect(() => {
         if (user?._id) {
-            axios.post('/message/markAllAsRead', { userId: user._id })
+            api.post('/message/markAllAsRead', { userId: user._id })
                 .then(() => {
                     dispatch(markAllAsRead(user._id));
                 });

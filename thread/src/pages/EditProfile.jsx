@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/axios';
 import toast from 'react-hot-toast';
 import { setAuthUser } from '../redux/authSlice.js';
 
@@ -32,7 +32,7 @@ const EditProfile = () => {
         formData.append("gender", input.gender);
         try {
             setLoading(true);
-            const res = await axios.post(`/user/profile/edit`, formData, {
+            const res = await api.post(`/user/profile/edit`, formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
                 },

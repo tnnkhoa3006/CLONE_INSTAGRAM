@@ -15,7 +15,7 @@ const Message = ({ selectedUser }) => {
         setLoading(true);
         const timer = setTimeout(() => setLoading(false), 1000);
         return () => clearTimeout(timer);
-    }, [selectedUser, messages]);
+    }, [selectedUser]);
 
     // Skeleton loading UI
     const Skeleton = () => (

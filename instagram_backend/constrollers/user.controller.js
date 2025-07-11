@@ -90,16 +90,17 @@ export const login = async (req, res) => {
       posts: populatedPosts
     }
 
-    const token = await jwt.sign({ id: user._id}, process.env.JWT_SECRET, {expiresIn: "1d"});
-    return res.cookie("token", token, {
-      httpOnly:true, sameSite: "strict", maxAge: 1*24*60*60*1000
-    }).json(
-      {
+    const accessToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    const refreshToken = jwt.sign({ id: user._id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: "7d" });
+
+    return res
+      .cookie("token", accessToken, { httpOnly: true, sameSite: "strict", maxAge: 1*24*60*60*1000 })
+      .cookie("refreshToken", refreshToken, { httpOnly: true, sameSite: "strict", maxAge: 7*24*60*60*1000 })
+      .json({
         message: `welcome back ${user.username}`,
         success: true,
         user
-      }
-    )
+      });
 
   } catch (error) {
     console.log(error);

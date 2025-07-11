@@ -12,7 +12,7 @@ import Dialogmore_option from "../modals/dialogmore_option";
 import CloseIcon from '@mui/icons-material/Close';
 import CommentBox from '../post.component/commentBox';
 import { useDispatch, useSelector } from 'react-redux';
-import axios from 'axios';
+import api from '../../services/axios';
 import { toast } from 'react-hot-toast';
 import { setPosts, setSelectedPost } from '../../redux/postSlice';
 
@@ -48,7 +48,7 @@ const Dialogcomment = ({ isopen, onClose }) => {
 
     const commentHandler = async () => {
         try {
-            const res = await axios.post(`/post/${selectedPost._id}/comment`, { text },
+            const res = await api.post(`/post/${selectedPost._id}/comment`, { text },
                 {
                     headers: {
                         'Content-Type': 'application/json'
@@ -83,7 +83,7 @@ const Dialogcomment = ({ isopen, onClose }) => {
     const likeOrDislikeHandler = async () => {
         try {
             const action = liked ? 'dislike' : 'like';
-            const res = await axios.post(`/post/${selectedPost._id}/${action}`, {}, { withCredentials: true });
+            const res = await api.post(`/post/${selectedPost._id}/${action}`, {}, { withCredentials: true });
             if (res.data.success) {
                 const updatedPostData = posts.map(p =>
                     p._id === selectedPost._id ? {

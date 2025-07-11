@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "../services/axios";
 import { useEffect } from "react";
 import { setPosts } from "../redux/postSlice.js";
 import { useDispatch, useSelector } from "react-redux"
@@ -12,7 +12,7 @@ const useGetAllPost = () => {
             if (!user) return; // Chỉ gọi API khi user đã đăng nhập
             
             try {
-                const res = await axios.get('/post/all', {withCredentials: true});
+                const res = await api.get('/post/all', {withCredentials: true});
                 if (res.data.success) {
                     dispatch(setPosts(res.data.posts));
                 }

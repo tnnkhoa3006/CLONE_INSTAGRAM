@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Thumbnail from '../assets/thumbnails.png'
 import Instagramlogo from '../assets/instagramlogo.png'
 import FacebookIcon from '@mui/icons-material/Facebook';
-import axios from 'axios';
+import api from '../services/axios';
 import toast from 'react-hot-toast';
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
@@ -26,7 +26,7 @@ const Register = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      const res = await axios.post('/user/register', inputText, {
+      const res = await api.post('/user/register', inputText, {
         header: {
           "Content-Type": "application/json"
         },

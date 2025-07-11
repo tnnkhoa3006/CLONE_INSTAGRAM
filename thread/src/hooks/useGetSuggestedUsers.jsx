@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "../services/axios";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux"
 import { setSuggestedUsers } from "../redux/authSlice.js";
@@ -13,7 +13,7 @@ const useGetSuggestedUsers = () => {
             if (!user) return; // Chỉ gọi API khi user đã đăng nhập
             
             try {
-                const res = await axios.get('/user/suggested', {withCredentials: true});
+                const res = await api.get('/user/suggested', {withCredentials: true});
                 if (res.data.success) {
                     dispatch(setSuggestedUsers(res.data.suggestedUsers));
                 }

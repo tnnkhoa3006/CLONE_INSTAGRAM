@@ -6,7 +6,7 @@ import InsertPhotoIcon from '@mui/icons-material/InsertPhoto';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import CloseIcon from '@mui/icons-material/Close';
 import { toast } from 'react-hot-toast';
-import axios from 'axios';
+import api from '../../services/axios';
 
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { useDispatch, useSelector } from 'react-redux';
@@ -22,7 +22,7 @@ const Dialogaddpost = ({ isopen, onClose }) => {
     const [loading, setLoading] = useState(false);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const { user } = useSelector(store => store.auth)
-    const {posts} = useSelector(store => store.post)
+    const { posts } = useSelector(store => store.post)
     const dispatch = useDispatch();
 
     const createPostHandler = async (e) => {
@@ -31,7 +31,7 @@ const Dialogaddpost = ({ isopen, onClose }) => {
         formData.append("image", imageFile); // Gửi file gốc thay vì URL
         try {
             setLoading(true);
-            const res = await axios.post("/post/addpost", formData, {
+            const res = await api.post("/post/addpost", formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
                 },
@@ -84,7 +84,7 @@ const Dialogaddpost = ({ isopen, onClose }) => {
 
     if (!isopen) return null
     return (
-        <div className='fixed inset-0 z-50 flex justify-center items-center'>
+        <div className='fixed inset-0 z-50 flex bg-black bg-opacity-60 justify-center items-center'>
             {!uploaded && (
                 <div className="flex flex-col">
                     <header className="flex justify-center items-center bg-black rounded-t-3xl p-2">
@@ -96,12 +96,11 @@ const Dialogaddpost = ({ isopen, onClose }) => {
                             <h2 className="text-xl font-medium mb-2">Drag photos and videos here</h2>
                         </div>
                         <input type="file" className='hidden' onChange={handleUpload} accept="image/*" disabled={loading} />
-                        <button 
-                            className={`px-4 py-2 rounded-md mt-4 ${
-                                loading 
-                                    ? 'bg-gray-500 cursor-not-allowed' 
+                        <button
+                            className={`px-4 py-2 rounded-md mt-4 ${loading
+                                    ? 'bg-gray-500 cursor-not-allowed'
                                     : 'bg-blue-500 hover:bg-blue-600'
-                            } text-white`} 
+                                } text-white`}
                             onClick={() => !loading && document.querySelector('input[type="file"]').click()}
                             disabled={loading}
                         >
@@ -115,7 +114,7 @@ const Dialogaddpost = ({ isopen, onClose }) => {
                 <div className='fixed inset-0 z-50 flex justify-center items-center'>
                     <div className="flex flex-col">
                         <header className='flex items-center justify-center bg-black rounded-t-3xl p-2'>
-                            <KeyboardArrowLeftIcon 
+                            <KeyboardArrowLeftIcon
                                 onClick={loading ? null : (() => {
                                     if (step === 1) {
                                         setUploaded(false);
@@ -125,33 +124,31 @@ const Dialogaddpost = ({ isopen, onClose }) => {
                                         handlePrevStep();
                                     }
                                 })}
-                                style={{ 
-                                    fontSize: 30, 
+                                style={{
+                                    fontSize: 30,
                                     marginRight: 'auto',
                                     cursor: loading ? 'not-allowed' : 'pointer',
                                     opacity: loading ? 0.5 : 1
-                                }} 
+                                }}
                             />
                             <div className="text-base font-semibold">
                                 {step === 1 ? 'Crop' : step === 2 ? 'Edit' : 'Create new post'}
                             </div>
                             {step === 3 ? (
                                 <div
-                                    className={`text-sm my-auto ml-auto font-semibold cursor-pointer ${
-                                        loading 
-                                            ? 'text-gray-400 cursor-not-allowed' 
+                                    className={`text-sm my-auto ml-auto font-semibold cursor-pointer ${loading
+                                            ? 'text-gray-400 cursor-not-allowed'
                                             : 'text-blue-500 hover:underline'
-                                    }`}
+                                        }`}
                                     onClick={loading ? null : createPostHandler}>
                                     {loading ? 'Sharing...' : 'Share'}
                                 </div>
                             ) : (
                                 <div
-                                    className={`text-sm my-auto ml-auto font-semibold ${
-                                        loading 
-                                            ? 'text-gray-400 cursor-not-allowed' 
+                                    className={`text-sm my-auto ml-auto font-semibold ${loading
+                                            ? 'text-gray-400 cursor-not-allowed'
                                             : 'text-blue-500 hover:underline cursor-pointer'
-                                    }`}
+                                        }`}
                                     onClick={loading ? null : handleNextStep}>
                                     Next
                                 </div>
@@ -265,15 +262,15 @@ const Dialogaddpost = ({ isopen, onClose }) => {
                             </div>
                         </div>}
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="absolute top-4 right-8 text-zinc-300 hover:text-white"
-                        style={{zIndex: 100}}
-                    >
-                        <CloseIcon style={{ fontSize: 32 }} />
-                    </button>
                 </div>
             )}
+            <button
+                onClick={onClose}
+                className="absolute top-4 right-8 text-zinc-300 hover:text-white"
+                style={{ zIndex: 100 }}
+            >
+                <CloseIcon style={{ fontSize: 32 }} />
+            </button>
         </div>
     )
 }

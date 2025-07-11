@@ -13,7 +13,7 @@ import Dialogmore_option from "../modals/dialogmore_option";
 import Dialogcomment from "../modals/dialogcomment";
 import { useDispatch, useSelector } from "react-redux";
 import { setPosts, setSelectedPost } from "../../redux/postSlice.js";
-import axios from "axios";
+import api from '../../services/axios';
 import { toast } from "react-hot-toast";
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -56,7 +56,7 @@ const PostCard = ({ postId }) => {
   const likeOrDislikeHandler = async () => {
     try {
       const action = liked ? 'dislike' : 'like';
-      const res = await axios.post(`/post/${post._id}/${action}`, {}, { withCredentials: true });
+      const res = await api.post(`/post/${post._id}/${action}`, {}, { withCredentials: true });
       if (res.data.success) {
         const updatedPostData = posts.map(p =>
           p._id === post._id ? {
@@ -78,7 +78,7 @@ const PostCard = ({ postId }) => {
       if (!text.trim()) {
         return toast.error("Bạn chưa nhập nội dung bình luận");
       }
-      const res = await axios.post(`/post/${post._id}/comment`, { text },
+      const res = await api.post(`/post/${post._id}/comment`, { text },
         {
           headers: {
             'Content-Type': 'application/json'
@@ -107,7 +107,7 @@ const PostCard = ({ postId }) => {
 
   const bookMarkHandler = async () => {
     try {
-      const res = await axios.post(`/post/${postId}/bookmark`, {}, { withCredentials: true });
+      const res = await api.post(`/post/${postId}/bookmark`, {}, { withCredentials: true });
       if (res.data.success) {
         const updatedPosts = posts.map(p =>
           p._id === post._id
@@ -127,110 +127,111 @@ const PostCard = ({ postId }) => {
   if (!post) return null;
 
   return (
-    <div className="w-[560px] bg-black text-white space-y-2">
-      {/* Header */}
-      <div className="w-full h-[50px] flex items-center pl-[80px] space-x-[5px]">
-        <img
-          className="w-[40px] h-[40px] object-cover rounded-full border-[3px] border-r-pink-500 border-b-purple-400 border-l-yellow-400 border-t-orange-400 cursor-pointer"
-          src={post?.author.ProfilePicture}
-          alt="avatar"
-        />
-        <div className="inline-flex text-[12px] h-[20px] items-center font-semibold cursor-pointer">{post.author.username}</div>
-        <div className="flex w-[80px] h-[20px] space-x-[3px]">
-          <div className="text-gray-400 text-[12px] w-[5px] h-[5px] font-extrabold">•</div>
-          <div className="text-gray-400 text-[12px] w-[50px] h-[20px] pt-[1.5px] cursor-pointer">
-            {dayjs(post.createdAt).fromNow(true)}
+    <div>
+      <div className="w-[560px] bg-black text-white space-y-2">
+        {/* Header */}
+        <div className="w-full h-[50px] flex items-center pl-[80px] space-x-[5px]">
+          <img
+            className="w-[40px] h-[40px] object-cover rounded-full border-[3px] border-r-pink-500 border-b-purple-400 border-l-yellow-400 border-t-orange-400 cursor-pointer"
+            src={post?.author.ProfilePicture}
+            alt="avatar"
+          />
+          <div className="inline-flex text-[12px] h-[20px] items-center font-semibold cursor-pointer">{post.author.username}</div>
+          <div className="flex w-[80px] h-[20px] space-x-[3px]">
+            <div className="text-gray-400 text-[12px] w-[5px] h-[5px] font-extrabold">•</div>
+            <div className="text-gray-400 text-[12px] w-[50px] h-[20px] pt-[1.5px] cursor-pointer">
+              {dayjs(post.createdAt).fromNow(true)}
+            </div>
+          </div>
+          <MoreHorizIcon
+            onClick={() => setShowOptions(true)}
+            titleAccess="More options"
+            style={{ fontSize: 22, marginLeft: 'auto', cursor: 'pointer' }}
+          />
+        </div>
+
+        {/* Image */}
+        <div className="w-full pl-[80px]">
+          <img className="w-full object-cover rounded" src={post.image} alt="post" />
+          <div className="flex w-full h-[50px] text-[14px] space-x-[10px] items-center">
+            {
+              liked ? (<FavoriteRoundedIcon titleAccess="Like" onClick={likeOrDislikeHandler} style={{ fontSize: 27, cursor: 'pointer', color: 'red' }} />)
+                : (<FavoriteBorderRoundedIcon className="hover:text-gray-400" titleAccess="Like" onClick={likeOrDislikeHandler} style={{ fontSize: 27, cursor: 'pointer' }} />)
+            }
+            <ModeCommentOutlinedIcon
+              onClick={() => {
+                dispatch(setSelectedPost(post));
+                setShowComment(true)
+              }}
+              titleAccess="Comment"
+              className="hover:text-gray-400"
+              style={{ fontSize: 27, cursor: 'pointer' }}
+            />
+            <ShareOutlinedIcon titleAccess="Share" className="hover:text-gray-400" style={{ fontSize: 27, cursor: 'pointer' }} />
+            {
+              saved
+                ? (<BookmarkIcon titleAccess="Save" onClick={bookMarkHandler} style={{ fontSize: 27, cursor: 'pointer', color: 'white', marginLeft: 'auto' }} />)
+                : (<TurnedInNotIcon titleAccess="Save" onClick={bookMarkHandler} className="hover:text-gray-400" style={{ fontSize: 27, cursor: 'pointer', marginLeft: 'auto' }} />)
+            }
           </div>
         </div>
-        <MoreHorizIcon
-          onClick={() => setShowOptions(true)}
-          titleAccess="More options"
-          style={{ fontSize: 22, marginLeft: 'auto', cursor: 'pointer' }}
-        />
-      </div>
 
-      {/* Image */}
-      <div className="w-full pl-[80px]">
-        <img className="w-full object-cover rounded" src={post.image} alt="post" />
-        <div className="flex w-full h-[50px] text-[14px] space-x-[10px] items-center">
+        {/* Content */}
+        <div className="w-full pl-[80px] space-y-[5px]">
+          <div className="flex w-full h-[35px]">
+            <div className="inline-flex h-[35px] text-[14px] items-center font-semibold cursor-pointer">{postLikes} likes</div>
+          </div>
+
+          <div className="w-full text-sm font-normal leading-relaxed">
+            <span alt="username" className="font-semibold text-sm cursor-pointer">{post.author.username}</span>{' '}
+            {post.caption}
+          </div>
           {
-            liked ? (<FavoriteRoundedIcon titleAccess="Like" onClick={likeOrDislikeHandler} style={{ fontSize: 27, cursor: 'pointer', color: 'red' }} />)
-              : (<FavoriteBorderRoundedIcon className="hover:text-gray-400" titleAccess="Like" onClick={likeOrDislikeHandler} style={{ fontSize: 27, cursor: 'pointer' }} />)
+            post.comments && post.comments.length > 0 && (
+              <div onClick={() => {
+                dispatch(setSelectedPost(post));
+                setShowComment(true)
+              }}
+                className="w-full text-[15px] text-gray-400 cursor-pointer">View all {post.comments.length} comments
+              </div>
+            )
           }
-          <ModeCommentOutlinedIcon
-            onClick={() => {
-              dispatch(setSelectedPost(post));
-              setShowComment(true)
-            }}
-            titleAccess="Comment"
-            className="hover:text-gray-400"
-            style={{ fontSize: 27, cursor: 'pointer' }}
-          />
-          <ShareOutlinedIcon titleAccess="Share" className="hover:text-gray-400" style={{ fontSize: 27, cursor: 'pointer' }} />
-          {
-            saved
-              ? (<BookmarkIcon titleAccess="Save" onClick={bookMarkHandler} style={{ fontSize: 27, cursor: 'pointer', color: 'white', marginLeft: 'auto' }} />)
-              : (<TurnedInNotIcon titleAccess="Save" onClick={bookMarkHandler} className="hover:text-gray-400" style={{ fontSize: 27, cursor: 'pointer', marginLeft: 'auto' }} />)
-          }
-        </div>
-      </div>
 
-      {/* Content */}
-      <div className="w-full pl-[80px] space-y-[5px]">
-        <div className="flex w-full h-[35px]">
-          <div className="inline-flex h-[35px] text-[14px] items-center font-semibold cursor-pointer">{postLikes} likes</div>
-        </div>
-
-        <div className="w-full text-sm font-normal leading-relaxed">
-          <span alt="username" className="font-semibold text-sm cursor-pointer">{post.author.username}</span>{' '}
-          {post.caption}
-        </div>
-        {
-          post.comments && post.comments.length > 0 && (
-            <div onClick={() => {
-              dispatch(setSelectedPost(post));
-              setShowComment(true)
-            }}
-              className="w-full text-[15px] text-gray-400 cursor-pointer">View all {post.comments.length} comments
-            </div>
-          )
-        }
-
-        {/* Comment box */}
-        <div className="flex w-full">
-          <textarea
-            className="w-[490px] bg-black text-white outline-none resize-none hide-scrollbar"
-            placeholder="Add a comment..."
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-          />
-          {text.trim().length > 0 && (
-            <div className="w-[45px] h-[30px] flex items-center justify-center">
-              <button onClick={commentHandler} className="text-sm font-semibold text-blue-500">Post</button>
-            </div>
-          )}
-          <div className="relative">
-            <button
-              onClick={() => setShowEmojiPicker(prev => !prev)}
-              className="text-sm font-semibold"
-            >
-              <EmojiEmotionsIcon titleAccess="Emoji" className="hover:text-gray-400" style={{ fontSize: 20, cursor: 'pointer' }} />
-            </button>
-
-            {showEmojiPicker && (
-              <div className="absolute bottom-[40px] right-0 z-50 shadow-lg">
-                <EmojiPicker
-                  onEmojiClick={handleEmojiClick}
-                  theme="dark"
-                  height={350}
-                />
+          {/* Comment box */}
+          <div className="flex w-full">
+            <textarea
+              className="w-[490px] bg-black text-white outline-none resize-none hide-scrollbar"
+              placeholder="Add a comment..."
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+            />
+            {text.trim().length > 0 && (
+              <div className="w-[45px] h-[30px] flex items-center justify-center">
+                <button onClick={commentHandler} className="text-sm font-semibold text-blue-500">Post</button>
               </div>
             )}
+            <div className="relative">
+              <button
+                onClick={() => setShowEmojiPicker(prev => !prev)}
+                className="text-sm font-semibold"
+              >
+                <EmojiEmotionsIcon titleAccess="Emoji" className="hover:text-gray-400" style={{ fontSize: 20, cursor: 'pointer' }} />
+              </button>
+
+              {showEmojiPicker && (
+                <div className="absolute bottom-[40px] right-0 z-50 shadow-lg">
+                  <EmojiPicker
+                    onEmojiClick={handleEmojiClick}
+                    theme="dark"
+                    height={350}
+                  />
+                </div>
+              )}
+            </div>
           </div>
+          <div className="w-[480px] border-b border-gray-700 mx-auto" />
         </div>
-        <div className="w-[480px] border-b border-gray-700 mx-auto" />
       </div>
-      {/* More options */}
       <Dialogmore_option isOpen={showOptions} onClose={() => setShowOptions(false)} post={post} />
       <Dialogcomment isopen={showComment} onClose={() => setShowComment(false)} post={post} />
     </div>

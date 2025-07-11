@@ -1,6 +1,6 @@
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../services/axios';
 import toast from 'react-hot-toast';
 import { useSelector, useDispatch } from 'react-redux';
 import { setAuthUser } from '../../redux/authSlice.js';
@@ -15,7 +15,7 @@ const RightSide = () => {
 
   const logoutHandler = async () => {
     try {
-      const res = await axios.get('/user/logout', { withCredentials: true });
+      const res = await api.get('/user/logout', { withCredentials: true });
       if (res.data.success) {
         dispatch(setAuthUser(null));
         dispatch(setPosts([]));

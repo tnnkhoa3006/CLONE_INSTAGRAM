@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "../services/axios";
 import { useEffect } from "react";
 import { setMessages } from "../redux/chatSlice.js";
 import { useDispatch, useSelector } from "react-redux"
@@ -12,7 +12,7 @@ const useGetAllMessage = () => {
             if (!user || !selectedUser?._id) return; // Kiểm tra cả user và selectedUser
             
             try {
-                const res = await axios.get(`/message/all/${selectedUser._id}`, {withCredentials: true});
+                const res = await api.get(`/message/all/${selectedUser._id}`, {withCredentials: true});
                 if (res.data.success) {
                     dispatch(setMessages(res.data.messages));
                 }

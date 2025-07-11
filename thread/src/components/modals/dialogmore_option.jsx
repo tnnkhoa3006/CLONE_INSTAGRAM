@@ -1,7 +1,7 @@
 import React from 'react'
 import { useSelector } from 'react-redux';
 import { toast } from 'react-hot-toast';
-import axios from 'axios';
+import api from '../../services/axios';
 import { useDispatch } from 'react-redux';
 import { setPosts, setSelectedPost } from '../../redux/postSlice.js';
 
@@ -17,7 +17,7 @@ const Dialogmore_option = ({ isOpen, onClose, post }) => {
 
     const deletePostHandler = async () => {
         try {
-            const res = await axios.delete(`/post/delete/${currentPost._id}`, { withCredentials: true });
+            const res = await api.delete(`/post/delete/${currentPost._id}`, { withCredentials: true });
             if (res.data.success) {
                 const updatedPosts = posts.filter(p => p._id !== currentPost._id);
                 dispatch(setPosts(updatedPosts));
