@@ -1,6 +1,8 @@
 import { Router } from 'express';
 const router = Router();
-import { verify, sign } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
+const { sign, verify } = jwt;
+
 
 router.post('/refresh-token', (req, res) => {
   const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
