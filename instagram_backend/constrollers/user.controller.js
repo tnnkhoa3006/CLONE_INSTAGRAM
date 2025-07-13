@@ -51,7 +51,9 @@ export const login = async (req, res) => {
       })     
     };
 
-    let user = await User.findOne({ email });
+    let user = await User.findOne({ email })
+      .populate('following', 'username ProfilePicture');
+
     if (!user) {
       return res.status(401).json({
         message: "User does not exist",
@@ -146,7 +148,8 @@ export const getProfile = async (req, res) => {
             populate: { path: "author", select: "username ProfilePicture" }
           }
         ]
-      });
+      })
+      .populate('following', 'username ProfilePicture');
 
     return res.status(200).json({
       user,

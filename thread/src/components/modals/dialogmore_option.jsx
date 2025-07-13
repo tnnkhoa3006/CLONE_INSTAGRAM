@@ -4,6 +4,8 @@ import { toast } from 'react-hot-toast';
 import api from '../../services/axios';
 import { useDispatch } from 'react-redux';
 import { setPosts, setSelectedPost } from '../../redux/postSlice.js';
+import { followOrUnfollowUser } from '../../services/user';
+import { setAuthUser } from '../../redux/authSlice';
 
 const Dialogmore_option = ({ isOpen, onClose, post }) => {
     const { user } = useSelector(store => store.auth);
@@ -36,6 +38,41 @@ const Dialogmore_option = ({ isOpen, onClose, post }) => {
         }
     };
 
+    const handleUnfollow = async () => {
+        try {
+            await followOrUnfollowUser(currentPost.author._id);
+            dispatch(setAuthUser({
+                ...user,
+                following: user.following.filter(f =>
+                    typeof f === 'object' ? f._id !== currentPost.author._id : f !== currentPost.author._id
+                )
+            }));
+            toast.success('Unfollowed successfully');
+            onClose();
+        } catch (err) {
+            toast.error('Error unfollowing user');
+        }
+    };
+
+    const handleFollow = async () => {
+        try {
+            await followOrUnfollowUser(currentPost.author._id);
+            dispatch(setAuthUser({
+                ...user,
+                following: [
+                    ...user.following,
+                    typeof user.following[0] === 'object'
+                        ? { _id: currentPost.author._id, username: currentPost.author.username, ProfilePicture: currentPost.author.ProfilePicture }
+                        : currentPost.author._id
+                ]
+            }));
+            toast.success('Followed successfully');
+            onClose();
+        } catch (err) {
+            toast.error('Error following user');
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex justify-center items-center">
             <div className="bg-neutral-800 text-white rounded-2xl w-[400px]">
@@ -48,9 +85,25 @@ const Dialogmore_option = ({ isOpen, onClose, post }) => {
                     <button className="w-full text-sm font-medium text-red-500 border-b-[1px] border-zinc-700 py-3">Report</button>
                 </div>
                 <div>
-                    {user && user._id !== currentPost?.author?._id &&
-                        <button className="w-full text-sm font-medium text-red-500 border-b-[1px] border-zinc-700 py-3">Unfollow</button>
-                    }
+                    {user && user._id !== currentPost?.author?._id && (
+                        user.following.some(f =>
+                            typeof f === 'object' ? f._id === currentPost.author._id : f === currentPost.author._id
+                        ) ? (
+                            <button
+                                className="w-full text-sm font-medium text-red-500 border-b-[1px] border-zinc-700 py-3"
+                                onClick={handleUnfollow}
+                            >
+                                Unfollow
+                            </button>
+                        ) : (
+                            <button
+                                className="w-full text-sm font-medium text-blue-500 border-b-[1px] border-zinc-700 py-3"
+                                onClick={handleFollow}
+                            >
+                                Follow
+                            </button>
+                        )
+                    )}
                 </div>
                 {[
                     "Add to favorites", "Go to post", "Share to ...", "Copy link", "Embed", "About this account"

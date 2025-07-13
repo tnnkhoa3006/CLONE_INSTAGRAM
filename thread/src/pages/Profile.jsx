@@ -6,16 +6,23 @@ import AssignmentIndOutlinedIcon from '@mui/icons-material/AssignmentIndOutlined
 import PostSticker from '../components/post.component/postSticker'
 import useGetUserProfile from '../hooks/useGetUserProfile';
 import { Link, useParams } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { followOrUnfollowUser } from '../services/user';
+import { setUserProfile, setAuthUser } from '../redux/authSlice';
 
 const Profile = () => {
     const [NavBar, setNavBar] = useState(1);
     const [loading, setLoading] = useState(true);
+    const [followLoading, setFollowLoading] = useState(false);
     const params = useParams();
     const userId = params.id;
     const { userProfile, user } = useSelector(store => store.auth);
+    const dispatch = useDispatch();
+
+    // Kiểm tra có phải profile của chính mình không
     const isLoggedInUserProfile = userProfile?._id === user._id;
-    const isFollowing = true;
+    // Kiểm tra đã follow chưa
+    const isFollowing = userProfile?.followers?.includes(user._id);
 
     // Gọi custom hook để fetch profile
     useGetUserProfile(userId);
@@ -35,6 +42,38 @@ const Profile = () => {
     const navBarHandler = (index) => {
         setNavBar(index);
     }
+
+    // Xử lý follow/unfollow
+    const handleFollow = async () => {
+        setFollowLoading(true);
+        try {
+            const res = await followOrUnfollowUser(userProfile._id);
+            if (res.data.success) {
+                let updatedFollowers;
+                let updatedFollowing;
+                if (isFollowing) {
+                    updatedFollowers = userProfile.followers.filter(id => id !== user._id);
+                    updatedFollowing = user.following.filter(f =>
+                        (typeof f === 'object' ? f._id : f) !== userProfile._id
+                    );
+                } else {
+                    updatedFollowers = [...userProfile.followers, user._id];
+                    updatedFollowing = [
+                        ...user.following,
+                        // Nếu following là object, thêm object, nếu là id, thêm id
+                        typeof user.following[0] === 'object'
+                            ? { _id: userProfile._id, username: userProfile.username, ProfilePicture: userProfile.ProfilePicture }
+                            : userProfile._id
+                    ];
+                }
+                dispatch(setUserProfile({ ...userProfile, followers: updatedFollowers }));
+                dispatch(setAuthUser({ ...user, following: updatedFollowing }));
+            }
+        } catch (err) {
+            // Xử lý lỗi nếu cần
+        }
+        setFollowLoading(false);
+    };
 
     // Hiển thị loading khi đang fetch profile
     if (loading) {
@@ -71,14 +110,16 @@ const Profile = () => {
                                             <SettingsIcon style={{ fontSize: 28 }} className="hover:text-zinc-400 transition-colors duration-300" />
                                         </>
                                     ) : (
-                                        isFollowing ? (
-                                            <>
-                                                <button className="px-4 py-1 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-sm transition-colors duration-300">Unfollow</button>
-                                                <button className="px-4 py-1 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-sm transition-colors duration-300">Message</button>
-                                            </>
-                                        ) : (
-                                            <button className="px-4 py-1 rounded-lg bg-blue-700 hover:bg-blue-600 text-sm transition-colors duration-300">Follow</button>
-                                        )
+                                        <>
+                                            <button
+                                                className={`px-4 py-1 rounded-lg text-sm transition-colors duration-300 ${isFollowing ? 'bg-zinc-700 hover:bg-zinc-600' : 'bg-blue-700 hover:bg-blue-600 text-white'}`}
+                                                onClick={handleFollow}
+                                                disabled={followLoading}
+                                            >
+                                                {isFollowing ? 'Unfollow' : 'Follow'}
+                                            </button>
+                                            <button className="px-4 py-1 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-sm transition-colors duration-300">Message</button>
+                                        </>
                                     )}
                                 </div>
                                 <div className="flex gap-10">
