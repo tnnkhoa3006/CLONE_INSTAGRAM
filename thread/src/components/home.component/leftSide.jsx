@@ -73,7 +73,9 @@ const LeftSide = () => {
   }, [likeNotifications]);
 
   const { messages } = useSelector(store => store.chat);
-  const unreadCount = messages?.filter(msg => !msg.read && msg.receiverId === user._id).length;
+  const unreadCount = user ? messages?.filter(msg => !msg.read && msg.receiverId === user._id).length : 0;
+
+  if (!user) return null; // hoặc return loading UI
 
   return (
     <>
@@ -157,8 +159,8 @@ const LeftSide = () => {
               <AddCircleOutlineIcon style={{ fontSize: 30 }} />
               <div className={`text-[16px] font-medium ${textHidden}`}>Create</div>
             </div>
-            <div className="w-[220px] h-[50px] flex items-center space-x-2 hover:cursor-pointer hover:bg-zinc-800 rounded-md px-2" onClick={() => navigate(`/profile/${user?._id}`)}>
-              <img className="w-[30px] h-[30px] rounded-full" src={user?.ProfilePicture} alt="profile image" />
+            <div className="w-[220px] h-[50px] flex items-center space-x-2 hover:cursor-pointer hover:bg-zinc-800 rounded-md px-2" onClick={() => user && navigate(`/profile/${user._id}`)}>
+              <img className="w-[30px] h-[30px] rounded-full" src={user?.ProfilePicture || ''} alt="profile image" />
               <div className={`text-[16px] font-medium ${textHidden}`}>Profile</div>
             </div>
             <div className="absolute top-[450px] space-y-2">
