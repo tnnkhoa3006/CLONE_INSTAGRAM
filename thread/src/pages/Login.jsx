@@ -28,7 +28,7 @@ const Login = () => {
       setLoading(true);
       e.preventDefault();
       const res = await api.post('/user/login', imputText, {
-        header: {
+        headers: {
           "Content-Type": "application/json"
         },
         withCredentials: true

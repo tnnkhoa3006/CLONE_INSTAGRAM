@@ -21,7 +21,7 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       try {
         // Gọi API refresh token
-        await api.post("/auth/refresh-token");
+        await api.post("/auth/refresh-token" , {}, { withCredentials: true });
         // Thử lại request cũ
         return api(originalRequest);
       } catch (refreshError) {

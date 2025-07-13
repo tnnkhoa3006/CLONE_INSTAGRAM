@@ -27,7 +27,7 @@ const Register = () => {
     try {
       setLoading(true);
       const res = await api.post('/user/register', inputText, {
-        header: {
+        headers: {
           "Content-Type": "application/json"
         },
         withCredentials: true
