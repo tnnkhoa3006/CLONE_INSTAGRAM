@@ -7,7 +7,6 @@ import { setAuthUser } from '../../redux/authSlice.js';
 import { setPosts } from '../../redux/postSlice.js';
 import useGetSuggestedUsers from '../../hooks/useGetSuggestedUsers.jsx';
 import { followOrUnfollowUser } from '../../services/user';
-import { setSuggestedUsers } from '../../redux/authSlice';
 
 const RightSide = () => {
   const navigate = useNavigate();
@@ -27,7 +26,6 @@ const RightSide = () => {
             : sugUser._id
         ]
       }));
-      useGetSuggestedUsers(); // Gọi lại để cập nhật danh sách
     } catch (err) {
       toast.error('Error following user');
     }
@@ -43,7 +41,6 @@ const RightSide = () => {
         toast.success(res.data.message);
       }
     } catch (error) {
-      console.log(error);
       toast.error(error.response.data.message);
     }
   }

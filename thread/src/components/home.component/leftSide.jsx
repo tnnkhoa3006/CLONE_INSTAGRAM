@@ -20,6 +20,7 @@ import PanoramaFishEyeIcon from '@mui/icons-material/PanoramaFishEye';
 import GestureIcon from '@mui/icons-material/Gesture';
 import Dialogaddpost from '../modals/dialogaddpost';
 import NotificationPanel from '../modals/NotificationPanel';
+import SearchPanel from '../modals/SearchPanel';
 
 const LeftSide = () => {
   const navigate = useNavigate()
@@ -29,9 +30,12 @@ const LeftSide = () => {
   const [hasSeenNotifications, setHasSeenNotifications] = useState(() => {
     return localStorage.getItem('hasSeenNotifications') === 'true';
   });
-  const { user } = useSelector(store => store.auth)
+  const { user, suggestedUsers } = useSelector(store => store.auth);
   const { likeNotifications } = useSelector(store => store.realTimeNotification)
   const notificationRef = useRef(null);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const searchRef = useRef(null);
 
   const isHome = location.pathname === '/';
   const isMessages = location.pathname === '/messages';
@@ -61,8 +65,8 @@ const LeftSide = () => {
   }, [showNotifications, likeNotifications.length]);
 
   // Khi panel mở, sidebar width nhỏ lại, chỉ hiện icon
-  const sidebarWidth = showNotifications ? "w-[80px]" : "w-[245px]";
-  const textHidden = showNotifications ? "hidden" : "inline";
+  const sidebarWidth = (showNotifications || showSearch) ? "w-[80px]" : "w-[245px]";
+  const textHidden = (showNotifications || showSearch) ? "hidden" : "inline";
 
   useEffect(() => {
     const lastSeen = Number(localStorage.getItem('lastSeenNotificationCount') || 0);
@@ -75,6 +79,32 @@ const LeftSide = () => {
   const { messages } = useSelector(store => store.chat);
   const unreadCount = user ? messages?.filter(msg => !msg.read && msg.receiverId === user._id).length : 0;
 
+  const handleSearch = (query) => {
+    if (!query) {
+      setSearchResults([]);
+      return;
+    }
+    // Tìm kiếm theo suggestedUsers
+    const results = (suggestedUsers || []).filter(u =>
+      u.username.toLowerCase().includes(query.toLowerCase())
+    );
+    setSearchResults(results);
+  };
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSearch(false);
+      }
+    }
+    if (showSearch) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showSearch]);
+
   if (!user) return null; // hoặc return loading UI
 
   return (
@@ -82,7 +112,7 @@ const LeftSide = () => {
       <div className={`flex h-screen top-0 left-0 ${sidebarWidth} z-50 border-r border-zinc-700 transition-all duration-300`}>
         <div className="relative w-full h-full">
           <Link to="/">
-            {showNotifications ? (
+            {showNotifications || showSearch ? (
               <img
                 title="Instagram"
                 src={instagram}
@@ -110,7 +140,13 @@ const LeftSide = () => {
               )}
               <div className={`text-[16px] font-bold ${textHidden} ${isHome ? "text-white" : "text-white"}`}>Home</div>
             </div>
-            <div className="w-[220px] h-[50px] flex items-center space-x-2 hover:cursor-pointer hover:bg-zinc-800 rounded-md px-2">
+            <div
+              className="w-[220px] h-[50px] flex items-center space-x-2 hover:cursor-pointer hover:bg-zinc-800 rounded-md px-2"
+              onClick={() => {
+                setShowSearch(true);
+                setShowNotifications(false);
+              }}
+            >
               <SearchIcon style={{ fontSize: 30 }} />
               <div className={`text-[16px] font-medium ${textHidden}`}>Search</div>
             </div>
@@ -141,6 +177,7 @@ const LeftSide = () => {
                 onClick={e => {
                   e.stopPropagation();
                   setShowNotifications(prev => !prev);
+                  setShowSearch(false);
                 }}
                 style={{ cursor: "pointer" }}
               >
@@ -181,6 +218,13 @@ const LeftSide = () => {
           <Dialogaddpost isopen={showAddPost} onClose={() => setShowAddPost(false)} />
         </div>
       </div>
+      {showSearch && (
+        <SearchPanel
+          ref={searchRef}
+          searchResults={searchResults}
+          onSearch={handleSearch}
+        />
+      )}
       {showNotifications && (
         <NotificationPanel
           ref={notificationRef}
