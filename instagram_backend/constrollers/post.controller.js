@@ -218,7 +218,8 @@ export const addComment = async (req, res) => {
     try {
         const authorId = req.id;
         const postId = req.params.id;
-        const { text } = req.body;
+        const { text, parentId } = req.body; // nhận thêm parentId
+
         const post = await Post.findById(postId);
         if (!text) return res.status(400).json({
             message: "Text is required",
@@ -234,7 +235,8 @@ export const addComment = async (req, res) => {
         const comment = await Comment.create({
             text,
             author: authorId,
-            post: postId
+            post: postId,
+            parentId: parentId || null
         })
 
         await comment.populate({ path: 'author', select: 'username ProfilePicture' });
@@ -253,7 +255,8 @@ export const addComment = async (req, res) => {
             success: true
         })
     } catch (error) {
-
+        console.log(error);
+        return res.status(500).json({ message: "Internal server error", success: false });
     }
 }
 
@@ -341,3 +344,37 @@ export const bookmarkPost = async (req, res) => {
         console.log(error);
     }
 }
+
+// Like comment
+export const likeComment = async (req, res) => {
+    try {
+        const userId = req.id;
+        const commentId = req.params.commentId;
+        const comment = await Comment.findById(commentId);
+        if (!comment) return res.status(404).json({ message: "Comment not found", success: false });
+
+        if (!comment.likes.includes(userId)) {
+            comment.likes.push(userId);
+            await comment.save();
+        }
+        return res.status(200).json({ message: "Liked", success: true, likes: comment.likes });
+    } catch (err) {
+        return res.status(500).json({ message: "Internal server error", success: false });
+    }
+};
+
+// Unlike comment
+export const unlikeComment = async (req, res) => {
+    try {
+        const userId = req.id;
+        const commentId = req.params.commentId;
+        const comment = await Comment.findById(commentId);
+        if (!comment) return res.status(404).json({ message: "Comment not found", success: false });
+
+        comment.likes = comment.likes.filter(id => id.toString() !== userId);
+        await comment.save();
+        return res.status(200).json({ message: "Unliked", success: true, likes: comment.likes });
+    } catch (err) {
+        return res.status(500).json({ message: "Internal server error", success: false });
+    }
+};

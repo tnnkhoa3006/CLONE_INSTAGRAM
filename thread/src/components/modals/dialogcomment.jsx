@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import EmojiPicker from "emoji-picker-react";
 import EmojiEmotionsIcon from "@mui/icons-material/EmojiEmotions";
 import FavoriteBorderRoundedIcon from "@mui/icons-material/FavoriteBorderRounded";
@@ -15,12 +15,16 @@ import { useDispatch, useSelector } from 'react-redux';
 import api from '../../services/axios';
 import { toast } from 'react-hot-toast';
 import { setPosts, setSelectedPost } from '../../redux/postSlice';
+import ReplyThread from '../post.component/ReplyThread';
 
 const Dialogcomment = ({ isopen, onClose }) => {
     const { selectedPost, posts } = useSelector(store => store.post);
     const [showOptions, setShowOptions] = useState(false)
     const { user } = useSelector(store => store.auth)
-    const [text, setText] = useState("");
+    const [replyTo, setReplyTo] = useState('');
+    const [replyParentId, setReplyParentId] = useState(null);
+    const [text, setText] = useState('');
+    const inputRef = useRef();
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [saved, setSaved] = useState(false);
     const dispatch = useDispatch()
@@ -46,15 +50,26 @@ const Dialogcomment = ({ isopen, onClose }) => {
         setText((prev) => prev + emojiData.emoji);
     };
 
+    // Khi nhấn Reply ở comment con
+    const handleReply = (username, parentId) => {
+        setReplyTo(username);
+        setReplyParentId(parentId); // Lưu lại _id của comment cha
+        // Nếu chưa có @username ở đầu, thêm vào
+        setText(prev => prev.startsWith(`@${username} `) ? prev : `@${username} `);
+        // Focus vào input
+        setTimeout(() => inputRef.current?.focus(), 100);
+    };
+
     const commentHandler = async () => {
         try {
-            const res = await api.post(`/post/${selectedPost._id}/comment`, { text },
-                {
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }, withCredentials: true
-                }
-            );
+            const payload = { text };
+            if (replyParentId) {
+                payload.parentId = replyParentId;
+            }
+            const res = await api.post(`/post/${selectedPost._id}/comment`, payload, {
+                headers: { 'Content-Type': 'application/json' },
+                withCredentials: true
+            });
             if (res.data.success) {
                 const updateCommentData = [...comment, res.data.comment];
                 setComment(updateCommentData);
@@ -73,6 +88,8 @@ const Dialogcomment = ({ isopen, onClose }) => {
                 dispatch(setSelectedPost(updatedSelectedPost));
                 toast.success(res.data.message);
                 setText('');
+                setReplyTo('');
+                setReplyParentId(null); // Reset sau khi gửi
             }
         } catch (error) {
             console.log(error);
@@ -125,6 +142,46 @@ const Dialogcomment = ({ isopen, onClose }) => {
         }
     }
 
+    // Tách comment gốc và reply
+    const rootComments = comment.filter(cmt => !cmt.parentId);
+    const replies = comment.filter(cmt => cmt.parentId);
+
+    const renderReplies = (allComments, parentId, level = 1) => {
+        const replies = allComments.filter(cmt => cmt.parentId === parentId);
+        if (replies.length === 0) return null;
+
+        // State để ẩn/hiện replies
+        const [showReplies, setShowReplies] = useState(false);
+
+        return (
+            <div style={{ marginLeft: level * 16 }}>
+                {!showReplies ? (
+                    <span
+                        className="text-blue-400 text-xs cursor-pointer hover:underline"
+                        onClick={() => setShowReplies(true)}
+                    >
+                        View replies ({replies.length})
+                    </span>
+                ) : (
+                    <>
+                        <span
+                            className="text-blue-400 text-xs cursor-pointer hover:underline"
+                            onClick={() => setShowReplies(false)}
+                        >
+                            Hide replies
+                        </span>
+                        {replies.map(reply => (
+                            <div key={reply._id}>
+                                <CommentBox comment={reply} onReply={handleReply} user={user} />
+                                {renderReplies(allComments, reply._id, level + 1)}
+                            </div>
+                        ))}
+                    </>
+                )}
+            </div>
+        );
+    };
+
     return (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex justify-center items-center">
             <article className="flex text-white bg-zinc-900 rounded-lg overflow-hidden shadow-lg">
@@ -173,9 +230,13 @@ const Dialogcomment = ({ isopen, onClose }) => {
                         </div>
                         {/* Comments */}
                         <div className="space-y-2">
-                            {comment.map((comment) =>
-                                <CommentBox key={comment._id} comment={comment} />
-                            )}
+                            {rootComments.map(cmt => (
+                                <div key={cmt._id}>
+                                    <CommentBox comment={cmt} onReply={handleReply} user={user} />
+                                    {/* Truyền toàn bộ comment để render replies */}
+                                    <ReplyThread allComments={comment} parentId={cmt._id} onReply={handleReply} user={user} />
+                                </div>
+                            ))}
                         </div>
                     </div>
                     {/* Footer: Actions + Add comment */}
@@ -204,6 +265,7 @@ const Dialogcomment = ({ isopen, onClose }) => {
                         {/* Add comment */}
                         <div className="flex items-center gap-2">
                             <textarea
+                                ref={inputRef}
                                 className="flex-1 bg-zinc-800 text-white outline-none resize-none hide-scrollbar rounded-md px-2 py-1"
                                 placeholder="Add a comment..."
                                 value={text}
