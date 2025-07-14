@@ -8,6 +8,7 @@ import KeyboardVoiceOutlinedIcon from '@mui/icons-material/KeyboardVoiceOutlined
 import BrokenImageOutlinedIcon from '@mui/icons-material/BrokenImageOutlined';
 import NoteOutlinedIcon from '@mui/icons-material/NoteOutlined';
 import FavoriteBorderOutlinedIcon from '@mui/icons-material/FavoriteBorderOutlined';
+import EmojiPicker from "emoji-picker-react";
 import { useDispatch, useSelector } from 'react-redux';
 import { setSelectedUser } from '../redux/authSlice';
 import Message from '../components/message/Message';
@@ -16,9 +17,14 @@ import api from '../services/axios';
 
 const ChatMessage = () => {
     const { user, suggestedUsers, selectedUser } = useSelector(store => store.auth);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const { onlineUsers, messages } = useSelector(store => store.chat);
     const [input, setInput] = useState('');
     const dispatch = useDispatch();
+
+    const handleEmojiClick = (emojiData) => {
+        setInput((prev) => prev + emojiData.emoji);
+    };
 
     const sendMessageHandler = async (receiverId) => {
         try {
@@ -47,7 +53,7 @@ const ChatMessage = () => {
         return () => {
             dispatch(setSelectedUser(null));
         }
-    } , [dispatch, user?._id]);
+    }, [dispatch, user?._id]);
     return (
         <div className="flex w-full h-screen bg-black text-white">
             <div className="flex flex-col w-1/4 ml-[250px] border-r border-zinc-700">
@@ -107,7 +113,9 @@ const ChatMessage = () => {
                             <Message selectedUser={selectedUser} />
                             <footer className='flex flex-col mt-auto p-4'>
                                 <div className='flex border border-zinc-700 px-4 py-2 rounded-3xl'>
-                                    <div className='flex items-center mr-auto'>
+                                    <div
+                                        onClick={() => setShowEmojiPicker(prev => !prev)}
+                                        className='flex items-center mr-auto'>
                                         <EmojiEmotionsIcon />
                                     </div>
                                     <div className='flex items-center w-full px-2'>
@@ -126,7 +134,15 @@ const ChatMessage = () => {
                                             <div onClick={() => sendMessageHandler(selectedUser?._id)} className='flex items-center ml-auto cursor-pointer text-blue-400'>send</div>
                                         )
                                     }
-
+                                    {showEmojiPicker && (
+                                        <div className="absolute bottom-[60px] z-50 shadow-lg">
+                                            <EmojiPicker
+                                                onEmojiClick={handleEmojiClick}
+                                                theme="dark"
+                                                height={350}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             </footer>
                         </div>

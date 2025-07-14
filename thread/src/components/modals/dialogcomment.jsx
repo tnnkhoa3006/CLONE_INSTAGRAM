@@ -30,17 +30,17 @@ const Dialogcomment = ({ isopen, onClose }) => {
     const liked = selectedPost?.likes?.includes(user?._id) || false;
     const postLikes = selectedPost?.likes?.length || 0;
 
+    // Lấy post từ Redux store thay vì từ prop
+    const post = posts.find(p => p._id === selectedPost._id);
+
     useEffect(() => {
-        if (selectedPost) {
+        if (selectedPost && user) {
             setComment(selectedPost.comments || [])
+            setSaved(!!selectedPost.isBookmarked);
         }
     }, [selectedPost]);
 
     if (!isopen || !selectedPost) return null;
-
-    const toggleSave = () => {
-        setSaved(!saved);
-    };
 
     const handleEmojiClick = (emojiData) => {
         setText((prev) => prev + emojiData.emoji);
@@ -105,6 +105,25 @@ const Dialogcomment = ({ isopen, onClose }) => {
             toast.error(error.response.data.message);
         }
     };
+
+    const bookMarkHandler = async () => {
+        try {
+            const res = await api.post(`/post/${selectedPost._id}/bookmark`, {}, { withCredentials: true });
+            if (res.data.success) {
+                const updatedPosts = posts.map(p =>
+                    p._id === post._id
+                        ? { ...p, isBookmarked: !saved }
+                        : p
+                );
+                setSaved(prev => !prev);
+                dispatch(setPosts(updatedPosts));
+                toast.success(res.data.message);
+            }
+        } catch (error) {
+            console.log(error);
+            toast.error(error?.response?.data?.message || "Có lỗi xảy ra");
+        }
+    }
 
     return (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex justify-center items-center">
@@ -175,9 +194,9 @@ const Dialogcomment = ({ isopen, onClose }) => {
                             />
                             <ShareOutlinedIcon titleAccess="Share" className="hover:text-gray-400" style={{ fontSize: 27, cursor: 'pointer' }} />
                             {saved ? (
-                                <BookmarkIcon titleAccess="Save" onClick={toggleSave} style={{ fontSize: 27, cursor: 'pointer', color: 'white', marginLeft: 'auto' }} />
+                                <BookmarkIcon titleAccess="Save" onClick={bookMarkHandler} style={{ fontSize: 27, cursor: 'pointer', color: 'white', marginLeft: 'auto' }} />
                             ) : (
-                                <TurnedInNotIcon titleAccess="Save" onClick={toggleSave} className="hover:text-gray-400" style={{ fontSize: 27, cursor: 'pointer', marginLeft: 'auto' }} />
+                                <TurnedInNotIcon titleAccess="Save" onClick={bookMarkHandler} className="hover:text-gray-400" style={{ fontSize: 27, cursor: 'pointer', marginLeft: 'auto' }} />
                             )}
                         </div>
                         {/* Likes */}

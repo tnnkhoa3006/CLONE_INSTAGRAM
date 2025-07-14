@@ -19,19 +19,6 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime);
 
-function getInstagramTime(dateString) {
-  const now = new Date();
-  const postDate = new Date(dateString);
-  const diff = (now - postDate) / 1000; // seconds
-
-  if (diff < 60) return "just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
-  if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
-  if (diff < 2419200) return `${Math.floor(diff / 604800)}w`;
-  return postDate.toLocaleDateString();
-}
-
 const PostCard = ({ postId }) => {
   const [text, setText] = useState("");
   const { user } = useSelector(store => store.auth);

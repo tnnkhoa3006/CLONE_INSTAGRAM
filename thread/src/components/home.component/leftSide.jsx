@@ -158,8 +158,8 @@ const LeftSide = () => {
               <SlideshowOutlinedIcon style={{ fontSize: 30 }} />
               <div className={`text-[16px] font-bold ${textHidden}`}>Reels</div>
             </div>
-            <div className="w-[220px] h-[50px] flex items-center space-x-2 hover:cursor-pointer hover:bg-zinc-800 rounded-md px-2">
-              <div className="relative" onClick={() => navigate('/messages')}>
+            <div onClick={() => navigate('/messages')} className="w-[220px] h-[50px] flex items-center space-x-2 hover:cursor-pointer hover:bg-zinc-800 rounded-md px-2">
+              <div className="relative">
                 {isMessages ? (
                   <SendIcon style={{ fontSize: 30, color: "#fff" }} />
                 ) : (
@@ -171,14 +171,15 @@ const LeftSide = () => {
               </div>
               <div className={`text-[16px] font-medium ${textHidden} ${isMessages ? "text-white" : "text-white"}`}>Messages</div>
             </div>
-            <div className="w-[220px] h-[50px] flex items-center space-x-2 hover:cursor-pointer hover:bg-zinc-800 rounded-md px-2 relative">
+            <div
+              onClick={e => {
+                e.stopPropagation();
+                setShowNotifications(prev => !prev);
+                setShowSearch(false);
+              }}
+              className="w-[220px] h-[50px] flex items-center space-x-2 hover:cursor-pointer hover:bg-zinc-800 rounded-md px-2 relative">
               <div
                 className="relative"
-                onClick={e => {
-                  e.stopPropagation();
-                  setShowNotifications(prev => !prev);
-                  setShowSearch(false);
-                }}
                 style={{ cursor: "pointer" }}
               >
                 {showNotifications ? (
