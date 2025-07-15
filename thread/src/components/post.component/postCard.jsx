@@ -15,6 +15,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setPosts, setSelectedPost } from "../../redux/postSlice.js";
 import api from '../../services/axios';
 import { toast } from "react-hot-toast";
+import { Link } from "react-router-dom";
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime);
@@ -123,10 +124,12 @@ const PostCard = ({ postId }) => {
             src={post?.author.ProfilePicture}
             alt="avatar"
           />
-          <div className="inline-flex text-[12px] h-[20px] items-center font-semibold cursor-pointer">{post.author.username}</div>
-          <div className="flex w-[80px] h-[20px] space-x-[3px]">
-            <div className="text-gray-400 text-[12px] w-[5px] h-[5px] font-extrabold">•</div>
-            <div className="text-gray-400 text-[12px] w-[50px] h-[20px] pt-[1.5px] cursor-pointer">
+          <Link to={`/profile/${post.author._id}`}>
+            <div className="inline-flex text-[12px] h-[20px] items-center font-semibold cursor-pointer">{post.author.username}</div>
+          </Link>
+          <div className="flex w-[80px] h-[20px] space-x-[3px] py-1">
+            <div className="text-gray-400 text-[12px] w-[5px] font-extrabold">•</div>
+            <div className="text-gray-400 text-[12px] w-[50px] cursor-pointer">
               {dayjs(post.createdAt).fromNow(true)}
             </div>
           </div>

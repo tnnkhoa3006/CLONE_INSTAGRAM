@@ -8,6 +8,7 @@ import KeyboardVoiceOutlinedIcon from '@mui/icons-material/KeyboardVoiceOutlined
 import BrokenImageOutlinedIcon from '@mui/icons-material/BrokenImageOutlined';
 import NoteOutlinedIcon from '@mui/icons-material/NoteOutlined';
 import FavoriteBorderOutlinedIcon from '@mui/icons-material/FavoriteBorderOutlined';
+import CloudCircleOutlinedIcon from '@mui/icons-material/CloudCircleOutlined';
 import EmojiPicker from "emoji-picker-react";
 import { useDispatch, useSelector } from 'react-redux';
 import { setSelectedUser } from '../redux/authSlice';
@@ -72,15 +73,15 @@ const ChatMessage = () => {
                     </div>
                 </div>
                 <div className='flex flex-col overflow-y-auto'>
-                    {suggestedUsers.map((suggestedUser) => {
-                        const isOnline = onlineUsers.includes(suggestedUser._id);
+                    {user?.following.map((friendUser) => {
+                        const isOnline = onlineUsers.includes(friendUser._id);
                         return (
-                            <div key={suggestedUser._id} onClick={() => dispatch(setSelectedUser(suggestedUser))} className='flex items-center h-[60px] py-9 px-4 space-x-2 cursor-pointer hover:bg-zinc-800'>
+                            <div key={friendUser._id} onClick={() => dispatch(setSelectedUser(friendUser))} className='flex items-center h-[60px] py-9 px-4 space-x-2 cursor-pointer hover:bg-zinc-800'>
                                 <div className='flex items-center'>
-                                    <img className='w-[50px] h-[50px] object-cover rounded-full' src={suggestedUser?.ProfilePicture} alt="" />
+                                    <img className='w-[50px] h-[50px] object-cover rounded-full' src={friendUser?.ProfilePicture} alt="" />
                                 </div>
                                 <div className='flex flex-col'>
-                                    <div>{suggestedUser?.username}</div>
+                                    <div>{friendUser?.username}</div>
                                     <div className={`text-[12px] text-zinc-400`}>{isOnline ? "Astive now" : "Offline"}</div>
                                 </div>
                             </div>
@@ -147,7 +148,11 @@ const ChatMessage = () => {
                             </footer>
                         </div>
                     ) : (
-                        <div>hello</div>
+                        <div className='flex flex-col items-center justify-center h-full'>
+                            <CloudCircleOutlinedIcon style={{ fontSize: "130px" }} />
+                            <h1 className='text-2xl font-normal'>Your messages</h1>
+                            <p className='text-zinc-400'>Send a message to start a chat.</p>
+                        </div>
                     )
                 }
             </div>
