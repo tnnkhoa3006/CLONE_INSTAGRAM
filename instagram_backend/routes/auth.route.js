@@ -11,7 +11,7 @@ router.post('/refresh-token', (req, res) => {
   try {
     const payload = verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
     const accessToken = sign({ id: payload.id }, process.env.JWT_SECRET, { expiresIn: "15m" });
-    res.cookie("token", accessToken, { httpOnly: true, sameSite: "strict", maxAge: 15*60*1000 });
+    res.cookie("token", accessToken, { httpOnly: true, sameSite: "none", secure: true, maxAge: 15*60*1000 });
     res.json({ accessToken });
   } catch (err) {
     return res.status(403).json({ message: 'Invalid or expired refresh token' });
