@@ -17,11 +17,14 @@ const Dialogmore_option = ({ isOpen, onClose, post }) => {
     // Sử dụng post từ prop hoặc selectedPost từ Redux store
     const currentPost = post || selectedPost;
 
+    // Nếu không có currentPost hoặc currentPost.author thì không render gì cả
+    if (!currentPost || !currentPost.author) return null;
+
     const deletePostHandler = async () => {
         try {
             const res = await api.delete(`/post/delete/${currentPost._id}`, { withCredentials: true });
             if (res.data.success) {
-                const updatedPosts = posts.filter(p => p._id !== currentPost._id);
+                const updatedPosts = posts.filter(p => p && p._id !== currentPost._id);
                 dispatch(setPosts(updatedPosts));
 
                 // Nếu đang xóa selectedPost, clear nó
@@ -34,7 +37,7 @@ const Dialogmore_option = ({ isOpen, onClose, post }) => {
             }
         } catch (error) {
             console.log(error);
-            toast.error(error.response.data.message);
+            toast.error(error.response?.data?.message || "Error deleting post");
         }
     };
 
@@ -76,7 +79,7 @@ const Dialogmore_option = ({ isOpen, onClose, post }) => {
     return (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex justify-center items-center">
             <div className="bg-neutral-800 text-white rounded-2xl w-[400px]">
-                {user && user._id === currentPost?.author?._id &&
+                {user && user._id === currentPost.author._id &&
                     <div>
                         <button onClick={deletePostHandler} className="w-full text-sm font-medium text-red-500 border-b-[1px] border-zinc-700 py-3">Delete</button>
                     </div>
@@ -85,7 +88,7 @@ const Dialogmore_option = ({ isOpen, onClose, post }) => {
                     <button className="w-full text-sm font-medium text-red-500 border-b-[1px] border-zinc-700 py-3">Report</button>
                 </div>
                 <div>
-                    {user && user._id !== currentPost?.author?._id && (
+                    {user && user._id !== currentPost.author._id && (
                         user.following.some(f =>
                             typeof f === 'object' ? f._id === currentPost.author._id : f === currentPost.author._id
                         ) ? (

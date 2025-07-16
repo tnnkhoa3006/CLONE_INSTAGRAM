@@ -28,7 +28,7 @@ const SearchPanel = forwardRef(({ searchResults = [], onSearch }, ref) => {
       </div>
       <div>
         {searchResults.length > 0 ? (
-          searchResults.map((result, idx) => (
+          searchResults.filter(Boolean).map((result, idx) => (
             <div
               key={result._id || idx}
               className="flex items-center px-4 py-3 hover:bg-zinc-800 transition cursor-pointer"

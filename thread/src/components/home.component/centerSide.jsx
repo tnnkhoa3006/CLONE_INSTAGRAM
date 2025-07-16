@@ -50,7 +50,7 @@ const CenterSide = () => {
         style={{ cursor: 'grab', userSelect: 'none' }}
       >
         <div className="flex items-center w-max space-x-5">
-          {stories.map((storyUser) => (
+          {stories.filter(Boolean).map((storyUser) => (
             <div
               key={storyUser._id}
               className="flex flex-col items-center w-[85px] cursor-pointer"
@@ -70,7 +70,7 @@ const CenterSide = () => {
       </div>
       {/* Post section */}
       <div className="flex flex-col items-center gap-6 mt-8 w-full max-w-2xl pr-20">
-        {posts?.map((post) => (
+        {posts?.filter(Boolean).map((post) => (
           <PostCard key={post._id} postId={post._id} />
         ))}
       </div>

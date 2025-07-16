@@ -18,7 +18,7 @@ const PostSticker = ({ posts }) => {
 
     return (
         <div className='flex flex-wrap w-full'>
-            {posts?.map((post) => (
+            {posts?.filter(Boolean).map((post) => (
                 <div
                     key={post._id}
                     onClick={() => handleOpenComment(post)}

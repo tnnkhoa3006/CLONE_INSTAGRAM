@@ -58,7 +58,7 @@ const Message = ({ selectedUser }) => {
                         </div>
                     ))
                 ) : (
-                    messages && messages.map((msg, idx) => (
+                    messages?.filter(Boolean).map((msg, idx) => (
                         <div
                             key={msg._id}
                             className={`flex ${msg.senderId === user._id ? 'justify-end' : 'justify-start'} mb-2`}

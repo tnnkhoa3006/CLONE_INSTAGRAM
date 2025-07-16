@@ -35,7 +35,7 @@ const Dialogcomment = ({ isopen, onClose }) => {
     const postLikes = selectedPost?.likes?.length || 0;
 
     // Lấy post từ Redux store thay vì từ prop
-    const post = posts.find(p => p._id === selectedPost._id);
+    const post = posts.find(p => p && p._id === selectedPost?._id);
 
     useEffect(() => {
         if (selectedPost && user) {
