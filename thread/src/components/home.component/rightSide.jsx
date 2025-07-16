@@ -7,6 +7,7 @@ import { setAuthUser } from '../../redux/authSlice.js';
 import { setPosts } from '../../redux/postSlice.js';
 import useGetSuggestedUsers from '../../hooks/useGetSuggestedUsers.jsx';
 import { followOrUnfollowUser } from '../../services/user';
+import { useState } from 'react';
 
 const RightSide = () => {
   const navigate = useNavigate();
@@ -14,18 +15,23 @@ const RightSide = () => {
   const { user, suggestedUsers } = useSelector(store => store.auth);
   useGetSuggestedUsers();
 
+  // Thêm state để điều khiển hiển thị
+  const [showAll, setShowAll] = useState(false);
+  const SUGGESTED_LIMIT = 6;
+
+  // Lọc danh sách hiển thị
+  const displayedUsers = showAll
+    ? suggestedUsers
+    : (suggestedUsers || []).slice(0, SUGGESTED_LIMIT);
+
   const handleFollow = async (sugUser) => {
     try {
       await followOrUnfollowUser(sugUser._id);
-      dispatch(setAuthUser({
-        ...user,
-        following: [
-          ...user.following,
-          typeof user.following[0] === 'object'
-            ? { _id: sugUser._id, username: sugUser.username, ProfilePicture: sugUser.ProfilePicture }
-            : sugUser._id
-        ]
-      }));
+      // Fetch lại user mới nhất từ backend
+      const res = await api.get(`/user/profile/${user._id}`, { withCredentials: true });
+      if (res.data.success) {
+        dispatch(setAuthUser(res.data.user));
+      }
     } catch (err) {
       toast.error('Error following user');
     }
@@ -68,10 +74,17 @@ const RightSide = () => {
       <div>
         <div className="flex items-center justify-between mb-2">
           <span className="text-gray-400 text-sm">Suggested for you</span>
-          <span className="text-white text-xs font-semibold hover:text-zinc-500 cursor-pointer">See All</span>
+          {suggestedUsers && suggestedUsers.length > SUGGESTED_LIMIT && (
+            <span
+              className="text-white text-xs font-semibold hover:text-zinc-500 cursor-pointer"
+              onClick={() => setShowAll(prev => !prev)}
+            >
+              {showAll ? "Show less" : "See All"}
+            </span>
+          )}
         </div>
         {suggestedUsers && suggestedUsers.length > 0 ? (
-          suggestedUsers
+          displayedUsers
             .filter(sugUser =>
               !user?.following?.some(f =>
                 typeof f === 'object' ? f._id === sugUser._id : f === sugUser._id

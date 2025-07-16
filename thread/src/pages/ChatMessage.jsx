@@ -55,6 +55,20 @@ const ChatMessage = () => {
             dispatch(setSelectedUser(null));
         }
     }, [dispatch, user?._id]);
+
+    const following = user?.following || [];
+    const followers = user?.followers || [];
+    const normalize = (arr) => arr.map(f =>
+      typeof f === 'object' ? f : { _id: f }
+    );
+    const allUsers = [
+      ...normalize(following),
+      ...normalize(followers)
+    ].filter((user, index, self) =>
+      user && user._id &&
+      index === self.findIndex(u => u._id === user._id)
+    );
+
     return (
         <div className="flex w-full h-screen bg-black text-white">
             <div className="flex flex-col w-1/4 ml-[250px] border-r border-zinc-700">
@@ -73,7 +87,7 @@ const ChatMessage = () => {
                     </div>
                 </div>
                 <div className='flex flex-col overflow-y-auto'>
-                    {user?.following.map((friendUser) => {
+                    {allUsers.map((friendUser) => {
                         const isOnline = onlineUsers.includes(friendUser._id);
                         return (
                             <div key={friendUser._id} onClick={() => dispatch(setSelectedUser(friendUser))} className='flex items-center h-[60px] py-9 px-4 space-x-2 cursor-pointer hover:bg-zinc-800'>

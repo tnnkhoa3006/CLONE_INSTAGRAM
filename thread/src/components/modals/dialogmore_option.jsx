@@ -44,12 +44,11 @@ const Dialogmore_option = ({ isOpen, onClose, post }) => {
     const handleUnfollow = async () => {
         try {
             await followOrUnfollowUser(currentPost.author._id);
-            dispatch(setAuthUser({
-                ...user,
-                following: user.following.filter(f =>
-                    typeof f === 'object' ? f._id !== currentPost.author._id : f !== currentPost.author._id
-                )
-            }));
+            // Fetch lại user mới nhất từ backend
+            const res = await api.get(`/user/profile/${user._id}`, { withCredentials: true });
+            if (res.data.success) {
+                dispatch(setAuthUser(res.data.user));
+            }
             toast.success('Unfollowed successfully');
             onClose();
         } catch (err) {
@@ -60,15 +59,11 @@ const Dialogmore_option = ({ isOpen, onClose, post }) => {
     const handleFollow = async () => {
         try {
             await followOrUnfollowUser(currentPost.author._id);
-            dispatch(setAuthUser({
-                ...user,
-                following: [
-                    ...user.following,
-                    typeof user.following[0] === 'object'
-                        ? { _id: currentPost.author._id, username: currentPost.author.username, ProfilePicture: currentPost.author.ProfilePicture }
-                        : currentPost.author._id
-                ]
-            }));
+            // Fetch lại user mới nhất từ backend
+            const res = await api.get(`/user/profile/${user._id}`, { withCredentials: true });
+            if (res.data.success) {
+                dispatch(setAuthUser(res.data.user));
+            }
             toast.success('Followed successfully');
             onClose();
         } catch (err) {
