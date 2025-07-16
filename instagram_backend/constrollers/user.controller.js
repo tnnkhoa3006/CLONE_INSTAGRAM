@@ -97,8 +97,8 @@ export const login = async (req, res) => {
     const refreshToken = jwt.sign({ id: user._id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: "7d" });
 
     return res
-      .cookie("token", accessToken, { httpOnly: true, sameSite: "strict", maxAge: 5*60*1000 })
-      .cookie("refreshToken", refreshToken, { httpOnly: true, sameSite: "strict", maxAge: 7*24*60*60*1000 })
+      .cookie("token", accessToken, { httpOnly: true, sameSite: "none", secure: true, maxAge: 5*60*1000 })
+      .cookie("refreshToken", refreshToken, { httpOnly: true, sameSite: "none", secure: true, maxAge: 7*24*60*60*1000 })
       .json({
         message: `welcome back ${user.username}`,
         success: true,
@@ -113,8 +113,8 @@ export const login = async (req, res) => {
 export const logout = async (req, res) => {
   try {
     return res
-      .cookie("token", null, { httpOnly: true, sameSite: "strict", maxAge: 0 })
-      .cookie("refreshToken", null, { httpOnly: true, sameSite: "strict", maxAge: 0 })
+      .cookie("token", null, { httpOnly: true, sameSite: "none", secure: true, maxAge: 0 })
+      .cookie("refreshToken", null, { httpOnly: true, sameSite: "none", secure: true, maxAge: 0 })
       .json({
         message: "Logout successfully",
         success: true
