@@ -97,8 +97,19 @@ export const login = async (req, res) => {
     const refreshToken = jwt.sign({ id: user._id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: "7d" });
 
     return res
-      .cookie("token", accessToken, { httpOnly: true, sameSite: "none", secure: true, maxAge: 5*60*1000 })
-      .cookie("refreshToken", refreshToken, { httpOnly: true, sameSite: "none", secure: true, maxAge: 7*24*60*60*1000 })
+      .cookie("token", accessToken, {
+        httpOnly: true,
+        sameSite: "none",   // PHẢI là "none"
+        secure: true,       // PHẢI là true
+        maxAge: 5 * 60 * 1000
+      })
+      .cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60 * 1000
+      })
       .json({
         message: `welcome back ${user.username}`,
         success: true,
