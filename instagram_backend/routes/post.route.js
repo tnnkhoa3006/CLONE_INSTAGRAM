@@ -4,7 +4,7 @@ import isAuthenticated from "../middlewares/isAuthenticated.js";
 import upload from "../middlewares/multer.js";
 import { addNewPost, getAllPosts, getUserPost, likePost, disLikePost, addComment, getCommentsOfPost, deletePost, bookmarkPost, likeComment, unlikeComment } from "../constrollers/post.controller.js";
 
-router.route("/addpost").post(isAuthenticated, upload.single("image"), addNewPost);
+router.route("/addpost").post(isAuthenticated, upload.single("file"), addNewPost);
 router.route("/all").get(isAuthenticated, getAllPosts);
 router.route("/userpost/all").get(isAuthenticated, getUserPost);
 router.route("/:id/like").post(isAuthenticated, likePost);

@@ -129,7 +129,7 @@ const PostCard = ({ postId }) => {
           </Link>
           <div className="flex w-[80px] h-[20px] space-x-[3px] py-1">
             <div className="text-gray-400 text-[12px] w-[5px] font-extrabold">•</div>
-            <div className="text-gray-400 text-[12px] w-[50px] cursor-pointer">
+            <div className="text-gray-400 text-[12px] w-[100px] cursor-pointer">
               {dayjs(post.createdAt).fromNow(true)}
             </div>
           </div>
@@ -142,7 +142,20 @@ const PostCard = ({ postId }) => {
 
         {/* Image */}
         <div className="w-full pl-[80px]">
-          <img className="w-full object-cover rounded" src={post.image} alt="post" />
+          {post.mediaType === "video" ? (
+            <video
+              className="w-full object-cover rounded"
+              src={post.mediaUrl}
+              controls
+              style={{ maxHeight: 500 }}
+            />
+          ) : (
+            <img
+              className="w-full object-cover rounded"
+              src={post.mediaUrl}
+              alt="post"
+            />
+          )}
           <div className="flex w-full h-[50px] text-[14px] space-x-[10px] items-center">
             {
               liked ? (<FavoriteRoundedIcon titleAccess="Like" onClick={likeOrDislikeHandler} style={{ fontSize: 27, cursor: 'pointer', color: 'red' }} />)

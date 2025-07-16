@@ -72,13 +72,14 @@ export const login = async (req, res) => {
     const populatedPosts = await Promise.all(
       user.posts.map(async (postId) => {
         const post = await Post.findById(postId);
-        if(post.author.equals(user._id)) {
+        if (post && post.author && post.author.equals(user._id)) {
           return post;
         } else {
           return null;
         }
       })
     );
+    const filteredPosts = populatedPosts.filter(Boolean);
 
     user = {
       _id: user._id,
@@ -89,7 +90,7 @@ export const login = async (req, res) => {
       gender: user.gender,
       followers: user.followers,
       following: user.following,
-      posts: populatedPosts
+      posts: filteredPosts
     }
 
     const accessToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "5m" });

@@ -24,11 +24,12 @@ const Dialogaddpost = ({ isopen, onClose }) => {
     const { user } = useSelector(store => store.auth)
     const { posts } = useSelector(store => store.post)
     const dispatch = useDispatch();
+    const [fileType, setFileType] = useState(""); // Thêm state này
 
     const createPostHandler = async (e) => {
         const formData = new FormData();
         formData.append("caption", inputText);
-        formData.append("image", imageFile); // Gửi file gốc thay vì URL
+        formData.append("file", imageFile); // Gửi file gốc thay vì URL
         try {
             setLoading(true);
             const res = await api.post("/post/addpost", formData, {
@@ -58,11 +59,16 @@ const Dialogaddpost = ({ isopen, onClose }) => {
     const handleUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
-            console.log("Uploaded file:", file.name);
+            const MAX_SIZE = 100 * 1024 * 1024; // 100MB
+            if (file.size > MAX_SIZE) {
+                toast.error("File size exceeds 100MB. Please select a smaller file.");
+                return;
+            }
             const url = URL.createObjectURL(file);
             setImageUrl(url); // URL để hiển thị
             setImageFile(file); // File gốc để gửi lên server
             setUploaded(true);
+            setFileType(file.type.startsWith("video/") ? "video" : "image"); // Xác định loại file
         }
     };
 
@@ -95,7 +101,7 @@ const Dialogaddpost = ({ isopen, onClose }) => {
                             <InsertPhotoIcon style={{ fontSize: 80 }} />
                             <h2 className="text-xl font-medium mb-2">Drag photos and videos here</h2>
                         </div>
-                        <input type="file" className='hidden' onChange={handleUpload} accept="image/*" disabled={loading} />
+                        <input type="file" className='hidden' onChange={handleUpload} accept="image/*,video/*" disabled={loading} />
                         <button
                             className={`px-4 py-2 rounded-md mt-4 ${loading
                                     ? 'bg-gray-500 cursor-not-allowed'
@@ -169,22 +175,34 @@ const Dialogaddpost = ({ isopen, onClose }) => {
                                     initialScale={1}
                                 >
                                     <TransformComponent wrapperClass="w-full h-full flex items-center justify-center">
-                                        <img
-                                            src={imageUrl}
-                                            alt="Uploaded"
-                                            className="w-full h-full object-cover"
-                                        />
+                                        {fileType === "video" ? (
+                                            <video src={imageUrl} controls className="w-full h-full object-cover" />
+                                        ) : (
+                                            <img
+                                                src={imageUrl}
+                                                alt="Uploaded"
+                                                className="w-full h-full object-cover"
+                                            />
+                                        )}
                                     </TransformComponent>
                                 </TransformWrapper>
                             </div>
                         )}
                         {step === 2 && <div className="w-[850px] h-[500px] flex bg-zinc-800 rounded-b-3xl m-auto">
                             <div className="w-[500px] h-full flex items-center justify-center">
-                                <img
-                                    src={imageUrl}
-                                    alt="Uploaded"
-                                    className="w-full h-full object-cover"
-                                />
+                                {fileType === "video" ? (
+                                    <video
+                                        src={imageUrl}
+                                        alt="Uploaded"
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <img
+                                        src={imageUrl}
+                                        alt="Uploaded"
+                                        className="w-full h-full object-cover"
+                                    />
+                                )}
                             </div>
                             <div className="w-[350px] flex flex-col">
                                 <div className="flex">
@@ -214,53 +232,80 @@ const Dialogaddpost = ({ isopen, onClose }) => {
                                 </div>
                             </div>
                         </div>}
-                        {step === 3 && <div className="flex w-[850px] h-[500px] bg-zinc-800 rounded-b-3xl">
-                            <div className="w-[500px] h-full flex">
-                                <img
-                                    src={imageUrl}
-                                    alt="Uploaded"
-                                    className="w-full h-full object-cover"
-                                />
-                            </div>
-                            <div className="w-[350px] flex flex-col border-[1px]">
-                                <div className="flex pt-[20px] pl-[20px] space-x-2 items-center">
-                                    <div className="flex justify-center">
-                                        <img className='w-[30px] h-[30px] rounded-full' src={user.ProfilePicture} alt="profileimage" />
+                        {step === 3 && (
+                            <div className="flex w-[850px] h-[500px] bg-zinc-800 rounded-b-3xl relative">
+                                {/* Overlay khi loading */}
+                                {loading && (
+                                    <div
+                                        className="absolute inset-0 bg-black bg-opacity-30 z-20 cursor-not-allowed"
+                                        style={{ pointerEvents: 'all' }}
+                                    >
+                                        {/* Có thể thêm spinner ở đây nếu muốn */}
                                     </div>
-                                    <div className="flex flex-col">
-                                        <div className="text-[14px] font-semibold">{user.username}</div>
-                                    </div>
+                                )}
+                                {/* Nội dung step 3 */}
+                                <div className="w-[500px] h-full flex">
+                                    {fileType === "video" ? (
+                                        <video
+                                            src={imageUrl}
+                                            alt="Uploaded"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <img
+                                            src={imageUrl}
+                                            alt="Uploaded"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    )}
                                 </div>
-                                <div className="flex w-full flex-col">
-                                    <div className='flex w-full h-[150px] pt-[10px] pl-[20px]'>
-                                        <textarea className='w-[330px] bg-zinc-800 text-[14px] font-semibold outline-none resize-none' type="text" value={inputText} onChange={(e) => setInputText(e.target.value)} maxLength={2200} />
+                                <div className="w-[350px] flex flex-col">
+                                    <div className="flex pt-[20px] pl-[20px] space-x-2 items-center">
+                                        <div className="flex justify-center">
+                                            <img className='w-[30px] h-[30px] rounded-full' src={user.ProfilePicture} alt="profileimage" />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <div className="text-[14px] font-semibold">{user.username}</div>
+                                        </div>
                                     </div>
-                                    <div className='flex w-[330px] pt-[10px] pl-[20px] items-center'>
-                                        <div className="relative">
-                                            <button
-                                                onClick={() => setShowEmojiPicker(prev => !prev)}
-                                                className="text-sm font-semibold"
-                                            >
-                                                <EmojiEmotionsIcon titleAccess="Emoji" className="hover:text-gray-400" style={{ fontSize: 20, cursor: 'pointer' }} />
-                                            </button>
+                                    <div className="flex w-full flex-col">
+                                        <div className='flex w-full h-[150px] pt-[10px] pl-[20px]'>
+                                            <textarea
+                                                className='w-[330px] bg-zinc-800 text-[14px] font-semibold outline-none resize-none'
+                                                type="text"
+                                                value={inputText}
+                                                onChange={(e) => setInputText(e.target.value)}
+                                                maxLength={2200}
+                                                disabled={loading}
+                                            />
+                                        </div>
+                                        <div className='flex w-[330px] pt-[10px] pl-[20px] items-center'>
+                                            <div className="relative">
+                                                <button
+                                                    onClick={() => setShowEmojiPicker(prev => !prev)}
+                                                    className="text-sm font-semibold"
+                                                >
+                                                    <EmojiEmotionsIcon titleAccess="Emoji" className="hover:text-gray-400" style={{ fontSize: 20, cursor: 'pointer' }} />
+                                                </button>
 
-                                            {showEmojiPicker && (
-                                                <div className="absolute bottom-[40px] right-0 z-50 shadow-lg">
-                                                    <EmojiPicker
-                                                        onEmojiClick={handleEmojiClick}
-                                                        theme="dark"
-                                                        height={350}
-                                                    />
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="flex ml-auto text-[12px] text-gray-400">
-                                            {inputText.length}/2.200
+                                                {showEmojiPicker && (
+                                                    <div className="absolute bottom-[40px] right-0 z-50 shadow-lg">
+                                                        <EmojiPicker
+                                                            onEmojiClick={handleEmojiClick}
+                                                            theme="dark"
+                                                            height={350}
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex ml-auto text-[12px] text-gray-400">
+                                                {inputText.length}/2.200
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>}
+                        )}
                     </div>
                 </div>
             )}

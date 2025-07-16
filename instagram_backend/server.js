@@ -20,6 +20,17 @@ connectDB();
 app.use(json());
 app.use(cors(corsOptions));
 
+// Tăng body parser limits
+app.use(express.json({ limit: '500mb' }));
+app.use(express.urlencoded({ limit: '500mb', extended: true }));
+
+// Timeout
+app.use((req, res, next) => {
+  req.setTimeout(300000); // 5 phút
+  res.setTimeout(300000); // 5 phút
+  next();
+});
+
 // Route
 app.use('/api/v1', indexRoute);
 

@@ -1,54 +1,100 @@
+// post.controller.js
 import sharp from "sharp";
-import cloudinary from "cloudinary";
+import cloudinary from "../config/cloudinary.js"; // Sửa lại import cho đúng
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
 import Comment from "../models/comment.model.js";
 import { getReceiverSocketId, io } from "../socket/socket.js";
+import fs from "fs"; // Import fs để xóa file tạm
 
+// Add new post
 export const addNewPost = async (req, res) => {
-    try {
-        const { caption } = req.body;
-        const image = req.file;
-        const authorId = req.id;
+  try {
+    const { caption } = req.body;
+    const file = req.file;
+    const authorId = req.id;
 
-        if (!image) {
-            return res.status(400).json({
-                message: "Image is required",
-                success: false
-            })
-        }
-
-        const optimizedImageBuffer = await sharp(image.buffer)
-            .resize({ width: 800, height: 800, fit: 'inside' })
-            .toFormat('jpeg', { quality: 90 })
-            .toBuffer();
-
-        const fileUrl = `data:image/jpeg;base64,${optimizedImageBuffer.toString('base64')}`;
-        const cloudResponse = await cloudinary.uploader.upload(fileUrl);
-        const post = await Post.create({
-            caption,
-            image: cloudResponse.secure_url,
-            author: authorId
-        });
-
-        const user = await User.findById(authorId);
-        if (user) {
-            user.posts.push(post._id);
-            await user.save();
-        }
-
-        await post.populate({ path: 'author', select: '-password' });
-
-        return res.status(200).json({
-            message: "Post created successfully",
-            post,
-            success: true
-        })
-    } catch (error) {
-        console.log(error);
+    if (!file) {
+      return res.status(400).json({
+        message: "Image or video is required",
+        success: false
+      });
     }
-}
 
+    // Kiểm tra size file (100MB)
+    const MAX_SIZE = 100 * 1024 * 1024; // 100MB
+    if (file.size > MAX_SIZE) {
+      if (file.path && fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
+      return res.status(400).json({
+        message: "File size exceeds 100MB. Please upload a smaller file.",
+        success: false
+      });
+    }
+
+    let cloudResponse;
+    let mediaType;
+
+    if (file.mimetype.startsWith('image/')) {
+      // Xử lý ảnh như cũ
+      const optimizedImageBuffer = await sharp(file.buffer)
+        .resize({ width: 800, height: 800, fit: 'inside' })
+        .toFormat('jpeg', { quality: 90 })
+        .toBuffer();
+
+      const fileUrl = `data:image/jpeg;base64,${optimizedImageBuffer.toString('base64')}`;
+      cloudResponse = await cloudinary.uploader.upload(fileUrl, {
+        resource_type: 'image',
+        folder: 'posts'
+      });
+      mediaType = 'image';
+    } else if (file.mimetype.startsWith('video/')) {
+      // Upload video trực tiếp
+      // Cloudinary yêu cầu file phải là buffer hoặc path, nên dùng stream hoặc lưu tạm file nếu cần
+      // Ở đây dùng base64 data URI cho video nhỏ, hoặc bạn có thể dùng stream upload nếu video lớn
+      const fileUrl = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+      cloudResponse = await cloudinary.uploader.upload(fileUrl, {
+        resource_type: 'video',
+        folder: 'posts'
+      });
+      mediaType = 'video';
+    } else {
+      return res.status(400).json({
+        message: "Unsupported file type",
+        success: false
+      });
+    }
+
+    const post = await Post.create({
+      caption,
+      mediaUrl: cloudResponse.secure_url,
+      author: authorId,
+      mediaType,
+      mediaPublicId: cloudResponse.public_id
+    });
+
+    const user = await User.findById(authorId);
+    if (user) {
+      user.posts.push(post._id);
+      await user.save();
+    }
+
+    await post.populate({ path: 'author', select: '-password' });
+
+    return res.status(200).json({
+      message: "Post created successfully",
+      post,
+      success: true
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error", success: false });
+  }
+};
+
+
+// Get all posts
 export const getAllPosts = async (req, res) => {
     try {
         const userId = req.id;
@@ -82,6 +128,7 @@ export const getAllPosts = async (req, res) => {
     }
 }
 
+// Get user post
 export const getUserPost = async (req, res) => {
     try {
         const authorId = req.id;
@@ -103,6 +150,7 @@ export const getUserPost = async (req, res) => {
     }
 }
 
+// Like post
 export const likePost = async (req, res) => {
     try {
         const likeUserId = req.id;
@@ -156,7 +204,7 @@ export const likePost = async (req, res) => {
     }
 }
 
-
+// Dislike post
 export const disLikePost = async (req, res) => {
     try {
         const likeUserId = req.id;
@@ -213,7 +261,7 @@ export const disLikePost = async (req, res) => {
     }
 };
 
-
+// Add comment
 export const addComment = async (req, res) => {
     try {
         const authorId = req.id;
@@ -260,6 +308,7 @@ export const addComment = async (req, res) => {
     }
 }
 
+// Delete post
 export const deletePost = async (req, res) => {
     try {
         const postId = req.params.id;
@@ -269,17 +318,22 @@ export const deletePost = async (req, res) => {
         if (!post) return res.status(400).json({
             message: "Post does not exist",
             success: false
-        })
+        });
 
         if (post.author.toString() !== authorId) return res.status(401).json({
             message: "authorization denied",
-        })
+        });
 
         await Post.findByIdAndDelete(postId);
 
         let user = await User.findById(authorId);
         user.posts = user.posts.filter(id => id.toString() !== postId);
         await user.save();
+
+        // XÓA FILE TRÊN CLOUDINARY
+        await cloudinary.uploader.destroy(post.mediaPublicId, {
+            resource_type: post.mediaType
+        });
 
         await Comment.deleteMany({ post: postId });
 
@@ -289,12 +343,13 @@ export const deletePost = async (req, res) => {
         return res.status(200).json({
             message: "Post deleted successfully",
             success: true
-        })
+        });
     } catch (error) {
         console.log(error);
     }
 }
 
+// Get comments of post
 export const getCommentsOfPost = async (req, res) => {
     try {
         const postId = req.params.id;
@@ -311,6 +366,7 @@ export const getCommentsOfPost = async (req, res) => {
     }
 }
 
+// Bookmark post
 export const bookmarkPost = async (req, res) => {
     try {
         const postId = req.params.id;

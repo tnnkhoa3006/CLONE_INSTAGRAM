@@ -190,12 +190,21 @@ const Dialogcomment = ({ isopen, onClose }) => {
                     className="flex-shrink-0 bg-black flex items-center justify-center"
                     style={{ width: 500, height: 600 }}
                 >
-                    <img
-                        src={selectedPost?.image}
-                        alt="imagepost"
-                        className="w-full h-full object-cover"
-                        style={{ minWidth: 0, minHeight: 0 }}
-                    />
+                    {selectedPost?.mediaType === "video" ? (
+                        <video
+                            src={selectedPost?.mediaUrl}
+                            controls
+                            className="w-full h-full object-cover"
+                            style={{ minWidth: 0, minHeight: 0 }}
+                        />
+                    ) : (
+                        <img
+                            src={selectedPost?.mediaUrl}
+                            alt="imagepost"
+                            className="w-full h-full object-cover"
+                            style={{ minWidth: 0, minHeight: 0 }}
+                        />
+                    )}
                 </div>
                 {/* Content section */}
                 <div className="flex flex-col bg-zinc-800" style={{ width: 500, height: 600 }}>
