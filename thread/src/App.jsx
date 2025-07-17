@@ -65,7 +65,7 @@ function AppContent() {
   return (
     <>
       <Toaster position="bottom-right" reverseOrder={false} />
-      <div className="min-h-screen bg-white text-black dark:bg-black dark:text-white transition-all">
+      <div className="min-h-screen text-black dark:bg-black dark:text-white transition-all">
         {showSplash && !isAuthRoute ? (
           <Splashpage />
         ) : (
