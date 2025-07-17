@@ -1,36 +1,64 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Home from './pages/Home'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import Profile from './pages/Profile'
-import './App.css'
+import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Profile from './pages/Profile';
+import Splashpage from './pages/Splashpage';
+import './App.css';
 import { Toaster } from 'react-hot-toast';
 import MainLayout from './pages/mainLayout';
-import EditProfile from './pages/EditProfile'
-import ChatMessage from './pages/ChatMessage'
-import ProtectRoutes from './utils/ProtectRoutes'
-import { useSelector } from 'react-redux'
-import useListenPostLike from './hooks/useListenPostLike'
-import useSocket from './hooks/useSocket'
-import useListenComment from './hooks/useListenComment'
-import useListenPostDelete from './hooks/useListenPostDelete'
-import useGetRTM from './hooks/useGetRTM'
-import useGetAllMessage from './hooks/useGetAllMessage'
+import EditProfile from './pages/EditProfile';
+import ChatMessage from './pages/ChatMessage';
+import ProtectRoutes from './utils/ProtectRoutes';
+import { useSelector } from 'react-redux';
+import useListenPostLike from './hooks/useListenPostLike';
+import useSocket from './hooks/useSocket';
+import useListenComment from './hooks/useListenComment';
+import useListenPostDelete from './hooks/useListenPostDelete';
+import useGetRTM from './hooks/useGetRTM';
+import useGetAllMessage from './hooks/useGetAllMessage';
+import useGetAllPost from './hooks/useGetAllPost';
 
-function App() {
+function AppContent() {
+  const { loading: postLoading } = useSelector(store => store.post);
   const { user } = useSelector(store => store.auth);
+  const [showSplash, setShowSplash] = useState(true);
+  const location = useLocation();
 
+  // Gọi các custom hook ở đây
+  useGetAllPost();
   useGetAllMessage();
   useGetRTM();
-  useSocket(user);           // Quản lý socket, notification, online users
-  useListenPostLike();       // Lắng nghe cập nhật like real-time
-  useListenComment();       // Lắng nghe cập nhật comment real-time
-  useListenPostDelete(); // Lắng nghe cập nhật post delete real-time
+  useSocket(user);
+  useListenPostLike();
+  useListenComment();
+  useListenPostDelete();
+
+  useEffect(() => {
+    if (postLoading) {
+      // When postLoading becomes true, set a 2-second timeout to hide Splashpage
+      const timer = setTimeout(() => {
+        setShowSplash(false);
+      }, 2000);
+
+      // Cleanup the timer if the component unmounts or postLoading changes
+      return () => clearTimeout(timer);
+    } else {
+      // When postLoading is false, keep showing Splashpage
+      setShowSplash(true);
+    }
+  }, [postLoading]);
+
+  // Check if the current route is /login or /register
+  const isAuthRoute = location.pathname === '/login' || location.pathname === '/register';
 
   return (
     <>
       <Toaster position="bottom-right" reverseOrder={false} />
-      <BrowserRouter>
+      {showSplash && !isAuthRoute ? (
+        <Splashpage />
+      ) : (
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -41,9 +69,17 @@ function App() {
             <Route path="/messages" element={<ChatMessage />} />
           </Route>
         </Routes>
-      </BrowserRouter>
+      )}
     </>
-  )
+  );
 }
 
-export default App
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  );
+}
+
+export default App;

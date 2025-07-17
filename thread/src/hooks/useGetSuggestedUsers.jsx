@@ -10,8 +10,9 @@ const useGetSuggestedUsers = () => {
     
     useEffect(() => {
         const fetchSuggestedUsers = async () => {
-            if (!user) return; // Chỉ gọi API khi user đã đăng nhập
-            
+            if (!user) {
+                return;
+            }
             try {
                 const res = await api.get('/user/suggested', {withCredentials: true});
                 if (res.data.success) {

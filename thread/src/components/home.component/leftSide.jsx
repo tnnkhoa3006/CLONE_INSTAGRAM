@@ -1,14 +1,11 @@
-import React, { use, useState, useRef, useEffect } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { useSelector } from 'react-redux'
-import instagram from '../../assets/instagram.png'
-import Instagramlogo from '../../assets/instagramlogo.png'
+import React, { useState, useRef, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import instagram from '../../assets/instagram.png';
+import Instagramlogo from '../../assets/instagramlogo.png';
 import HomeIcon from '@mui/icons-material/Home';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
-import SearchIcon from '@mui/icons-material/Search';
-import ExploreIcon from '@mui/icons-material/Explore';
-import ExploreOutlinedIcon from '@mui/icons-material/ExploreOutlined';
-import SmartDisplayIcon from '@mui/icons-material/SmartDisplay';
+import SearchIcon from '@mui/icons-material/Search'; // Re-added for Search
 import SlideshowOutlinedIcon from '@mui/icons-material/SlideshowOutlined';
 import SendIcon from '@mui/icons-material/Send';
 import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
@@ -23,39 +20,59 @@ import NotificationPanel from '../modals/NotificationPanel';
 import SearchPanel from '../modals/SearchPanel';
 
 const LeftSide = () => {
-  const navigate = useNavigate()
-  const location = useLocation()
+  const navigate = useNavigate();
+  const location = useLocation();
   const [showAddPost, setShowAddPost] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [hasSeenNotifications, setHasSeenNotifications] = useState(() => {
     return localStorage.getItem('hasSeenNotifications') === 'true';
   });
-  const { user, suggestedUsers } = useSelector(store => store.auth);
-  const { likeNotifications } = useSelector(store => store.realTimeNotification)
+  const { user, suggestedUsers } = useSelector((store) => store.auth);
+  const { likeNotifications } = useSelector((store) => store.realTimeNotification);
+  const { messages } = useSelector((store) => store.chat);
   const notificationRef = useRef(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const searchRef = useRef(null);
+  const searchButtonRef = useRef(null);
 
   const isHome = location.pathname === '/';
   const isMessages = location.pathname === '/messages';
+  const unreadCount = user
+    ? messages?.filter((msg) => !msg.read && msg.receiverId === user._id).length
+    : 0;
 
-  // Đóng panel khi click ra ngoài
+  // Close panels when clicking outside
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+    const handleClickOutside = (event) => {
+      const target = event.target;
+
+      // Đóng notification nếu click ngoài
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(target)
+      ) {
         setShowNotifications(false);
       }
-    }
-    if (showNotifications) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
+
+      // Đóng search nếu click ngoài, nhưng KHÔNG phải chính nút search
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(target) &&
+        searchButtonRef.current &&
+        !searchButtonRef.current.contains(target)
+      ) {
+        setShowSearch(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [showNotifications]);
+  }, []);
 
-  // Khi mở panel notification, đánh dấu đã xem
+  // Mark notifications as seen when panel is opened
   useEffect(() => {
     if (showNotifications) {
       setHasSeenNotifications(true);
@@ -64,10 +81,7 @@ const LeftSide = () => {
     }
   }, [showNotifications, likeNotifications.length]);
 
-  // Khi panel mở, sidebar width nhỏ lại, chỉ hiện icon
-  const sidebarWidth = (showNotifications || showSearch) ? "w-[80px]" : "w-[245px]";
-  const textHidden = (showNotifications || showSearch) ? "hidden" : "inline";
-
+  // Update notification status when new notifications arrive
   useEffect(() => {
     const lastSeen = Number(localStorage.getItem('lastSeenNotificationCount') || 0);
     if (likeNotifications.length > lastSeen) {
@@ -76,164 +90,276 @@ const LeftSide = () => {
     }
   }, [likeNotifications]);
 
-  const { messages } = useSelector(store => store.chat);
-  const unreadCount = user ? messages?.filter(msg => !msg.read && msg.receiverId === user._id).length : 0;
+  // Handle profile navigation
+  const handleProfile = () => {
+    if (user) {
+      navigate(`/profile/${user._id}`);
+    }
+  };
 
+  // Handle search
   const handleSearch = (query) => {
     if (!query) {
       setSearchResults([]);
       return;
     }
-    // Tìm kiếm theo suggestedUsers
-    const results = (suggestedUsers || []).filter(u =>
+    const results = (suggestedUsers || []).filter((u) =>
       u.username.toLowerCase().includes(query.toLowerCase())
     );
     setSearchResults(results);
   };
 
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
-        setShowSearch(false);
-      }
-    }
-    if (showSearch) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showSearch]);
-
-  if (!user) return null; // hoặc return loading UI
+  if (!user) return null; // Or return a loading UI
 
   return (
     <>
-      <div className={`flex h-screen top-0 left-0 ${sidebarWidth} z-50 border-r border-zinc-700 transition-all duration-300`}>
-        <div className="relative w-full h-full">
-          <Link to="/">
-            {showNotifications || showSearch ? (
-              <img
-                title="Instagram"
-                src={instagram}
-                alt="Instagram"
-                className="absolute top-[40px] left-[35px] bg-white rounded-3xl transform -translate-x-1/2 cursor-pointer w-8 transition-all duration-300"
-              />
-            ) : (
-              <img
-                title="Instagram"
-                src={Instagramlogo}
-                alt="Instagram"
-                className="absolute top-[40px] left-[70px] transform -translate-x-1/2 cursor-pointer w-24 transition-all duration-300"
-              />
-            )}
+      {/* Desktop Sidebar */}
+      <div
+        className={`hidden md:flex fixed h-screen top-0 left-0 ${showNotifications || showSearch ? 'w-[80px] pl-2' : 'w-[245px]'
+          } z-50 border-r border-zinc-700 bg-black transition-all duration-300 flex-col`}
+      >
+        <div className="relative w-full h-full flex flex-col items-center pt-6">
+          <Link to="/" className="mb-8 mr-5">
+            <img
+              title="Instagram"
+              src={showNotifications || showSearch ? instagram : Instagramlogo}
+              alt="Instagram"
+              className={`${showNotifications || showSearch ? 'w-8 rounded-3xl' : 'w-24'
+                } cursor-pointer transition-all duration-300`}
+            />
           </Link>
-          <div className="absolute top-[100px] left-[10px] w-full space-y-1.5">
+          <div className="w-full space-y-1.5">
             <div
-              className={`w-[220px] h-[50px] flex items-center space-x-2 hover:cursor-pointer hover:bg-zinc-800 rounded-md px-2`}
+              className={`w-full h-12 flex items-center space-x-4 hover:bg-zinc-800 rounded-md px-3 cursor-pointer`}
               onClick={() => navigate('/')}
             >
               {isHome ? (
-                <HomeIcon style={{ fontSize: 30, color: "#fff" }} />
+                <HomeIcon style={{ fontSize: 24, color: '#fff' }} />
               ) : (
-                <HomeOutlinedIcon style={{ fontSize: 30, color: "#fff" }} />
+                <HomeOutlinedIcon style={{ fontSize: 24, color: '#fff' }} />
               )}
-              <div className={`text-[16px] font-bold ${textHidden} ${isHome ? "text-white" : "text-white"}`}>Home</div>
+              <div
+                className={`text-sm font-medium ${showNotifications || showSearch ? 'hidden' : 'inline'
+                  } ${isHome ? 'text-white' : 'text-gray-400'}`}
+              >
+                Home
+              </div>
             </div>
             <div
-              className="w-[220px] h-[50px] flex items-center space-x-2 hover:cursor-pointer hover:bg-zinc-800 rounded-md px-2"
+              ref={searchButtonRef}
+              className="w-full h-12 flex items-center space-x-4 hover:bg-zinc-800 rounded-md px-3 cursor-pointer"
               onClick={() => {
-                setShowSearch(true);
-                setShowNotifications(false);
+                setShowSearch((prev) => !prev); // Toggle trạng thái
+                setShowNotifications(false);    // Tắt notification nếu đang mở
               }}
             >
-              <SearchIcon style={{ fontSize: 30 }} />
-              <div className={`text-[16px] font-medium ${textHidden}`}>Search</div>
-            </div>
-            <div className="w-[220px] h-[50px] flex items-center space-x-2 hover:cursor-pointer hover:bg-zinc-800 rounded-md px-2">
-              <ExploreOutlinedIcon style={{ fontSize: 30 }} />
-              <div className={`text-[16px] font-medium ${textHidden}`}>Explore</div>
-            </div>
-            <div className="w-[220px] h-[50px] flex items-center space-x-2 hover:cursor-pointer hover:bg-zinc-800 rounded-md px-2">
-              <SlideshowOutlinedIcon style={{ fontSize: 30 }} />
-              <div className={`text-[16px] font-bold ${textHidden}`}>Reels</div>
-            </div>
-            <div onClick={() => navigate('/messages')} className="w-[220px] h-[50px] flex items-center space-x-2 hover:cursor-pointer hover:bg-zinc-800 rounded-md px-2">
-              <div className="relative">
-                {isMessages ? (
-                  <SendIcon style={{ fontSize: 30, color: "#fff" }} />
-                ) : (
-                  <SendOutlinedIcon style={{ fontSize: 30, color: "#fff" }} />
-                )}
-                {(unreadCount > 0) && (
-                  <div className="absolute top-1 -right-1 w-[10px] h-[10px] bg-red-500 rounded-full z-10"></div>
-                )}
+              <SearchIcon style={{ fontSize: 24, color: '#fff' }} />
+              <div
+                className={`text-sm font-medium ${showNotifications || showSearch ? 'hidden' : 'inline'
+                  } text-gray-400`}
+              >
+                Search
               </div>
-              <div className={`text-[16px] font-medium ${textHidden} ${isMessages ? "text-white" : "text-white"}`}>Messages</div>
+            </div>
+            <div className="w-full h-12 flex items-center space-x-4 hover:bg-zinc-800 rounded-md px-3 cursor-pointer">
+              <SlideshowOutlinedIcon style={{ fontSize: 24, color: '#fff' }} />
+              <div
+                className={`text-sm font-medium ${showNotifications || showSearch ? 'hidden' : 'inline'
+                  } text-gray-400`}
+              >
+                Reels
+              </div>
             </div>
             <div
-              onClick={e => {
+              className="w-full h-12 flex items-center space-x-4 hover:bg-zinc-800 rounded-md px-3 cursor-pointer"
+              onClick={() => navigate('/messages')}
+            >
+              <div className="relative">
+                {isMessages ? (
+                  <SendIcon style={{ fontSize: 24, color: '#fff' }} />
+                ) : (
+                  <SendOutlinedIcon style={{ fontSize: 24, color: '#fff' }} />
+                )}
+                {unreadCount > 0 && (
+                  <div className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full z-10"></div>
+                )}
+              </div>
+              <div
+                className={`text-sm font-medium ${showNotifications || showSearch ? 'hidden' : 'inline'
+                  } ${isMessages ? 'text-white' : 'text-gray-400'}`}
+              >
+                Messages
+              </div>
+            </div>
+            <div
+              className="w-full h-12 flex items-center space-x-4 hover:bg-zinc-800 rounded-md px-3 cursor-pointer relative"
+              onClick={(e) => {
                 e.stopPropagation();
-                setShowNotifications(prev => !prev);
+                setShowNotifications((prev) => !prev);
                 setShowSearch(false);
               }}
-              className="w-[220px] h-[50px] flex items-center space-x-2 hover:cursor-pointer hover:bg-zinc-800 rounded-md px-2 relative">
-              <div
-                className="relative"
-                style={{ cursor: "pointer" }}
-              >
+            >
+              <div className="relative">
                 {showNotifications ? (
-                  <FavoriteIcon style={{ fontSize: 30, color: "#fff" }} />
+                  <FavoriteIcon style={{ fontSize: 24, color: '#fff' }} />
                 ) : (
-                  <FavoriteBorderIcon style={{ fontSize: 30, color: "#fff" }} />
+                  <FavoriteBorderIcon style={{ fontSize: 24, color: '#fff' }} />
                 )}
-                {likeNotifications && likeNotifications.length > 0 && !hasSeenNotifications && (
-                  <div className="absolute top-1 -right-1 w-[10px] h-[10px] bg-red-500 rounded-full z-10"></div>
+                {likeNotifications?.length > 0 && !hasSeenNotifications && (
+                  <div className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full z-10"></div>
                 )}
               </div>
-              <div className={`text-[16px] font-medium ${textHidden}`}>Notifications</div>
-            </div>
-            <div className="w-[220px] h-[50px] flex items-center space-x-2 hover:cursor-pointer hover:bg-zinc-800 rounded-md px-2" onClick={() => setShowAddPost(true)}>
-              <AddCircleOutlineIcon style={{ fontSize: 30 }} />
-              <div className={`text-[16px] font-medium ${textHidden}`}>Create</div>
-            </div>
-            <div className="w-[220px] h-[50px] flex items-center space-x-2 hover:cursor-pointer hover:bg-zinc-800 rounded-md px-2" onClick={() => user && navigate(`/profile/${user._id}`)}>
-              <img className="w-[30px] h-[30px] rounded-full object-cover" src={user?.ProfilePicture || ''} alt="profile image" />
-              <div className={`text-[16px] font-medium ${textHidden}`}>Profile</div>
-            </div>
-            <div className="absolute top-[450px] space-y-2">
-              <div className="w-[220px] h-[50px] flex items-center space-x-2 hover:cursor-pointer hover:bg-zinc-800 rounded-md px-2">
-                <PanoramaFishEyeIcon style={{ fontSize: 30 }} />
-                <div className={`text-[16px] font-medium ${textHidden}`}>Meta AI</div>
+              <div
+                className={`text-sm font-medium ${showNotifications || showSearch ? 'hidden' : 'inline'
+                  } text-gray-400`}
+              >
+                Notifications
               </div>
-              <div className="w-[220px] h-[50px] flex items-center space-x-2 hover:cursor-pointer hover:bg-zinc-800 rounded-md px-2">
-                <GestureIcon style={{ fontSize: 30 }} />
-                <div className={`text-[16px] font-medium ${textHidden}`}>Threads</div>
+            </div>
+            <div
+              className="w-full h-12 flex items-center space-x-4 hover:bg-zinc-800 rounded-md px-3 cursor-pointer"
+              onClick={() => setShowAddPost(true)}
+            >
+              <AddCircleOutlineIcon style={{ fontSize: 24, color: '#fff' }} />
+              <div
+                className={`text-sm font-medium ${showNotifications || showSearch ? 'hidden' : 'inline'
+                  } text-gray-400`}
+              >
+                Create
               </div>
-              <div className="w-[220px] h-[50px] flex items-center space-x-2 hover:cursor-pointer hover:bg-zinc-800 rounded-md px-2">
-                <MenuIcon style={{ fontSize: 30 }} />
-                <div className={`text-[16px] font-medium ${textHidden}`}>More</div>
+            </div>
+            <div
+              className="w-full h-12 flex items-center space-x-4 hover:bg-zinc-800 rounded-md px-3 cursor-pointer"
+              onClick={handleProfile}
+            >
+              <img
+                className="w-6 h-6 rounded-full object-cover"
+                src={user?.ProfilePicture || ''}
+                alt="profile image"
+              />
+              <div
+                className={`text-sm font-medium ${showNotifications || showSearch ? 'hidden' : 'inline'
+                  } text-gray-400`}
+              >
+                Profile
+              </div>
+            </div>
+            <div className="w-full space-y-1.5 pt-10 mt-auto">
+              <div className="w-full h-12 flex items-center space-x-4 hover:bg-zinc-800 rounded-md px-3 cursor-pointer">
+                <PanoramaFishEyeIcon style={{ fontSize: 24, color: '#fff' }} />
+                <div
+                  className={`text-sm font-medium ${showNotifications || showSearch ? 'hidden' : 'inline'
+                    } text-gray-400`}
+                >
+                  Meta AI
+                </div>
+              </div>
+              <div className="w-full h-12 flex items-center space-x-4 hover:bg-zinc-800 rounded-md px-3 cursor-pointer">
+                <GestureIcon style={{ fontSize: 24, color: '#fff' }} />
+                <div
+                  className={`text-sm font-medium ${showNotifications || showSearch ? 'hidden' : 'inline'
+                    } text-gray-400`}
+                >
+                  Threads
+                </div>
+              </div>
+              <div className="w-full h-12 flex items-center space-x-4 hover:bg-zinc-800 rounded-md px-3 cursor-pointer">
+                <MenuIcon style={{ fontSize: 24, color: '#fff' }} />
+                <div
+                  className={`text-sm font-medium ${showNotifications || showSearch ? 'hidden' : 'inline'
+                    } text-gray-400`}
+                >
+                  More
+                </div>
               </div>
             </div>
           </div>
-          <Dialogaddpost isopen={showAddPost} onClose={() => setShowAddPost(false)} />
         </div>
       </div>
+      {/* Mobile Top Bar */}
+      <div className="md:hidden fixed top-0 left-0 w-full h-14 bg-black border-b border-zinc-700 z-50 flex items-center justify-between px-4">
+        <Link to="/">
+          <img src={Instagramlogo} alt="Instagram" className="w-24" />
+        </Link>
+        <div className="flex space-x-4">
+          <div onClick={() => setShowSearch(true)} className="p-1 hover:bg-zinc-800 rounded-md">
+            <SearchIcon style={{ fontSize: 26, color: '#fff' }} />
+          </div>
+          <div
+            onClick={() => {
+              setShowNotifications(prev => !prev);
+              setShowSearch(false);
+            }}
+            className="relative p-1 hover:bg-zinc-800 rounded-md"
+          >
+            {showNotifications ? (
+              <FavoriteIcon style={{ fontSize: 26, color: '#fff' }} />
+            ) : (
+              <FavoriteBorderIcon style={{ fontSize: 26, color: '#fff' }} />
+            )}
+            {likeNotifications?.length > 0 && !hasSeenNotifications && (
+              <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></div>
+            )}
+          </div>
+        </div>
+      </div>
+      {/* Mobile Bottom Navigation */}
+      <div className="md:hidden fixed px-auto left-0 bottom-0 w-full h-16 bg-gray-900 border-t border-zinc-700 z-50 flex justify-around items-center">
+        <div
+          className="flex items-center justify-center p-2 hover:bg-zinc-800 rounded-md"
+          onClick={() => navigate('/')}
+        >
+          {isHome ? (
+            <HomeIcon style={{ fontSize: 28, color: '#fff' }} />
+          ) : (
+            <HomeOutlinedIcon style={{ fontSize: 28, color: '#fff' }} />
+          )}
+        </div>
+        <div
+          className="flex items-center justify-center p-2 hover:bg-zinc-800 rounded-md relative"
+        >
+          <SlideshowOutlinedIcon style={{ fontSize: 28, color: '#fff' }} />
+        </div>
+        <div
+          className="flex items-center justify-center p-2 hover:bg-zinc-800 rounded-md"
+          onClick={() => setShowAddPost(true)}
+        >
+          <AddCircleOutlineIcon style={{ fontSize: 28, color: '#fff' }} />
+        </div>
+        <div
+          className="flex items-center justify-center p-2 hover:bg-zinc-800 rounded-md relative"
+          onClick={() => navigate('/messages')}
+        >
+          {isMessages ? (
+            <SendIcon style={{ fontSize: 28, color: '#fff' }} />
+          ) : (
+            <SendOutlinedIcon style={{ fontSize: 28, color: '#fff' }} />
+          )}
+          {unreadCount > 0 && (
+            <div className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full z-10"></div>
+          )}
+        </div>
+        <div
+          className="flex items-center justify-center p-2 hover:bg-zinc-800 rounded-md"
+          onClick={handleProfile}
+        >
+          <img
+            className="w-7 h-7 rounded-full object-cover"
+            src={user?.ProfilePicture || ''}
+            alt="profile image"
+          />
+        </div>
+      </div>
+      {/* Modals */}
+      {showAddPost && <Dialogaddpost isopen={showAddPost} onClose={() => setShowAddPost(false)} />}
       {showSearch && (
-        <SearchPanel
-          ref={searchRef}
-          searchResults={searchResults}
-          onSearch={handleSearch}
-        />
+        <SearchPanel ref={searchRef} searchResults={searchResults} onSearch={handleSearch} onClose={() => setShowSearch(false)} />
       )}
       {showNotifications && (
-        <NotificationPanel
-          ref={notificationRef}
-          likeNotifications={likeNotifications}
-        />
+        <NotificationPanel ref={notificationRef} likeNotifications={likeNotifications} onClose={() => setShowNotifications(false)} />
       )}
     </>
-  )
-}
+  );
+};
 
-export default LeftSide
+export default LeftSide;

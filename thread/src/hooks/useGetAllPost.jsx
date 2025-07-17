@@ -1,26 +1,32 @@
 import api from "../services/axios";
 import { useEffect } from "react";
-import { setPosts } from "../redux/postSlice.js";
+import { setPosts, setPostLoading } from "../redux/postSlice.js";
 import { useDispatch, useSelector } from "react-redux"
 
 const useGetAllPost = () => {
     const dispatch = useDispatch();
     const { user } = useSelector(store => store.auth);
-    
+
     useEffect(() => {
-        const fetchAllPort = async () => {
-            if (!user) return; // Chỉ gọi API khi user đã đăng nhập
-            
+        const fetchAllPost = async () => {
+            if (!user) {
+                dispatch(setPostLoading(false));
+                return;
+            }
             try {
+                dispatch(setPostLoading(true));
                 const res = await api.get('/post/all', {withCredentials: true});
                 if (res.data.success) {
                     dispatch(setPosts(res.data.posts));
+                } else {
+                    dispatch(setPostLoading(false));
                 }
             } catch (error) {
                 console.error(error);
+                dispatch(setPostLoading(false));
             }
         }
-        fetchAllPort();
+        fetchAllPost();
     }, [dispatch, user]);
 }
 

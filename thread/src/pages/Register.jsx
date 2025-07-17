@@ -1,21 +1,20 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Thumbnail from '../assets/thumbnails.png'
-import Instagramlogo from '../assets/instagramlogo.png'
+import Thumbnail from '../assets/thumbnails.png';
+import Instagramlogo from '../assets/instagramlogo.png';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import api from '../services/axios';
 import toast from 'react-hot-toast';
-import { useState } from 'react';
 import { useSelector } from 'react-redux';
 
 const Register = () => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const [inputText, setInputText] = useState({
     username: '',
     email: '',
-    password: ''
+    password: '',
   });
-  const { user } = useSelector(store => store.auth);
+  const { user } = useSelector((store) => store.auth);
   const [loading, setLoading] = useState(false);
 
   const handleInput = (e) => {
@@ -28,9 +27,9 @@ const Register = () => {
       setLoading(true);
       const res = await api.post('/user/register', inputText, {
         headers: {
-          "Content-Type": "application/json"
+          'Content-Type': 'application/json',
         },
-        withCredentials: true
+        withCredentials: true,
       });
 
       if (res.data.success) {
@@ -41,28 +40,35 @@ const Register = () => {
         toast.error(res.data.message);
       }
     } catch (error) {
-      console.log(error);
-      toast.error(error.response.data.message);
+      console.error(error);
+      toast.error(error.response?.data?.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
-  }
+  };
+
   useEffect(() => {
     if (user) {
       navigate('/');
     }
-  }, []);
+  }, [user, navigate]);
 
   return (
-    <section className="w-screen h-screen">
-      <div className="w-full h-full flex">
-        <article className="flex w-[970px] h-full m-auto pb-[55px] pt-[55px] justify-center items-center">
-          <div className="w-[580px] h-full">
-            <img className="w-[545px] h-[460px] mt-[100px]" src={Thumbnail} alt="thumbnails" />
+    <section className="w-screen min-h-screen bg-black flex flex-col">
+      <div className="flex-grow flex items-center justify-center p-4">
+        <article className="flex flex-col md:flex-row max-w-4xl w-full mx-auto items-center justify-center">
+          {/* Thumbnail - Hidden on mobile, shown on larger screens */}
+          <div className="hidden md:flex md:w-1/2 justify-center">
+            <img
+              className="w-full max-w-[450px] h-auto"
+              src={Thumbnail}
+              alt="thumbnails"
+            />
           </div>
-          <div className="w-[360px] h-full flex flex-col">
-            <div className="w-full flex items-center flex-col justify-center">
-              <div className="w-[180px] pt-[30px] flex justify-center items-center">
+          {/* Register Form */}
+          <div className="w-full md:w-1/2 flex flex-col items-center px-4">
+            <div className="w-full max-w-[350px] flex flex-col items-center">
+              <div className="w-[180px] py-6 flex justify-center">
                 <img
                   title="Instagram"
                   src={Instagramlogo}
@@ -70,94 +76,101 @@ const Register = () => {
                   className="w-full cursor-pointer"
                 />
               </div>
-              <div className="w-full flex justify-center items-center">
-                <div className="w-full flex flex-col justify-center items-center space-y-[20px]">
-                  <form onSubmit={handleSignup} className='w-full' action="">
-                    <div className="w-full flex justify-center items-center pb-[20px]">
-                      <h4 className="w-3/4 text-zinc-300 text-center text-[16px]">Sign up to see photos and videos from your friends.</h4>
-                    </div>
-                    <div className="w-full flex justify-center items-center">
-                      <div className="w-3/4 bg-blue-600 h-[35px] rounded-md flex justify-center items-center cursor-pointer">
-                        <FacebookIcon style={{ fontSize: 25, color: 'white' }} />
-                        <span className="text-white text-[14px] font-semibold ml-[10px]">Log in with Facebook</span>
-                      </div>
-                    </div>
-                    <div className="w-full flex justify-center items-center py-[15px]">
-                      <div className="flex w-3/4 pt-[10px] items-center justify-center">
-                        <div className="w-2/5 h-[0.4px] bg-zinc-700"></div>
-                        <div className="w-1/5 text-white text-[12px] flex justify-center items-center">OR</div>
-                        <div className="w-2/5 h-[0.4px] bg-zinc-700"></div>
-                      </div>
-                    </div>
-                    <div className="w-full flex justify-center items-center pb-[10px]">
-                      <input
-                        className="text-xs w-3/4 h-[35px] text-white outline-none resize-none bg-zinc-900 rounded-sm border-[1px] border-gray-500 px-3"
-                        type="text"
-                        placeholder="Username"
-                        name='username'
-                        value={inputText.username}
-                        onChange={handleInput}
-                      />
-                    </div>
-                    <div className="w-full flex justify-center items-center pb-[10px]">
-                      <input
-                        className="text-xs w-3/4 h-[35px] text-white outline-none resize-none bg-zinc-900 rounded-sm border-[1px] border-gray-500 px-3"
-                        type="email"
-                        placeholder="Phone number or email"
-                        name='email'
-                        value={inputText.email}
-                        onChange={handleInput}
-                      />
-                    </div>
-                    <div className="w-full flex justify-center items-center pb-[10px]">
-                      <input
-                        className="text-xs w-3/4 h-[35px] text-white outline-none resize-none bg-zinc-900 rounded-sm border-[1px] border-gray-500 px-3"
-                        type="password"
-                        placeholder="Password"
-                        name='password'
-                        value={inputText.password}
-                        onChange={handleInput}
-                      />
-                    </div>
-                    <div className="w-full flex flex-col justify-center items-center pt-[10px] space-y-[10px]">
-                      <span className="w-3/4 text-center text-gray-400 text-[12px]">
-                        People who use our service may have uploaded your contact information to Instagram.{' '}
-                        <span className="text-blue-400 cursor-pointer hover:text-blue-300">Learn more</span>
-                      </span>
-                      <span className="w-3/4 text-center text-gray-400 text-[12px]">
-                        By signing up, you agree to our{' '}
-                        <span className="text-blue-400 cursor-pointer hover:text-blue-300">Terms</span>{' '}
-                        {', '}
-                        <span className="text-blue-400 cursor-pointer hover:text-blue-300">Privacy Policy</span>{' '}
-                        and
-                        <span className="text-blue-400 cursor-pointer hover:text-blue-300"> Cookies Policy</span>{'.'}
+              <div className="w-full flex flex-col items-center space-y-4">
+                <form onSubmit={handleSignup} className="w-full space-y-4">
+                  <div className="w-full flex justify-center">
+                    <h4 className="w-full max-w-[300px] text-center text-gray-300 text-sm">
+                      Sign up to see photos and videos from your friends.
+                    </h4>
+                  </div>
+                  <div className="w-full flex justify-center">
+                    <div className="w-full max-w-[300px] bg-blue-600 h-10 rounded flex justify-center items-center cursor-pointer hover:bg-blue-700">
+                      <FacebookIcon style={{ fontSize: 20, color: 'white' }} />
+                      <span className="text-white text-sm font-semibold ml-2">
+                        Sign up with Facebook
                       </span>
                     </div>
-                    <div className="w-full flex justify-center items-center pt-[15px]">
-                      <button
-                        type="submit"
-                        className="w-3/4 h-[30px] text-gray-300 bg-blue-700 rounded-lg border-[1px] border-gray-500"
-                      >Sign up</button>
-                    </div>
-                  </form>
+                  </div>
+                  <div className="flex w-full max-w-[300px] items-center justify-center space-x-2">
+                    <div className="w-1/3 h-[1px] bg-gray-600"></div>
+                    <span className="text-gray-400 text-sm">OR</span>
+                    <div className="w-1/3 h-[1px] bg-gray-600"></div>
+                  </div>
+                  <div className="w-full flex justify-center">
+                    <input
+                      className="w-full max-w-[300px] h-10 text-sm text-white outline-none bg-zinc-800 rounded border border-gray-600 px-3 placeholder-gray-400 focus:border-blue-500"
+                      type="text"
+                      placeholder="Username"
+                      name="username"
+                      value={inputText.username}
+                      onChange={handleInput}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="w-full flex justify-center">
+                    <input
+                      className="w-full max-w-[300px] h-10 text-sm text-white outline-none bg-zinc-800 rounded border border-gray-600 px-3 placeholder-gray-400 focus:border-blue-500"
+                      type="email"
+                      placeholder="Phone number or email"
+                      name="email"
+                      value={inputText.email}
+                      onChange={handleInput}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="w-full flex justify-center">
+                    <input
+                      className="w-full max-w-[300px] h-10 text-sm text-white outline-none bg-zinc-800 rounded border border-gray-600 px-3 placeholder-gray-400 focus:border-blue-500"
+                      type="password"
+                      placeholder="Password"
+                      name="password"
+                      value={inputText.password}
+                      onChange={handleInput}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="w-full flex flex-col items-center space-y-3 text-gray-400 text-xs text-center">
+                    <span className="max-w-[300px]">
+                      People who use our service may have uploaded your contact information to Instagram.{' '}
+                      <span className="text-blue-400 cursor-pointer hover:text-blue-300">Learn more</span>
+                    </span>
+                    <span className="max-w-[300px]">
+                      By signing up, you agree to our{' '}
+                      <span className="text-blue-400 cursor-pointer hover:text-blue-300">Terms</span>,{' '}
+                      <span className="text-blue-400 cursor-pointer hover:text-blue-300">Privacy Policy</span>{' '}
+                      and{' '}
+                      <span className="text-blue-400 cursor-pointer hover:text-blue-300">Cookies Policy</span>.
+                    </span>
+                  </div>
+                  <div className="w-full flex justify-center">
+                    <button
+                      type="submit"
+                      className="w-full max-w-[300px] h-9 text-white bg-blue-600 rounded font-semibold text-sm hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed"
+                      disabled={loading}
+                    >
+                      {loading ? 'Signing up...' : 'Sign up'}
+                    </button>
+                  </div>
+                </form>
+                <div className="w-full flex justify-center pt-6 text-sm">
+                  <span className="text-gray-300">Have an account?</span>
+                  <span
+                    className="text-blue-400 font-semibold ml-1 cursor-pointer hover:text-blue-300"
+                    onClick={() => navigate('/login')}
+                  >
+                    Log in
+                  </span>
                 </div>
               </div>
-            </div>
-            <div className="w-full flex justify-center items-center pt-[55px] space-x-1">
-              <span className="text-white text-[14px]">Have an account?</span>
-              <span
-                className="text-blue-400 text-[14px] font-semibold cursor-pointer hover:text-blue-300"
-                onClick={() => navigate('/login')}
-              >
-                Log in
-              </span>
             </div>
           </div>
         </article>
       </div>
-      <div className="text-white text-[20px] flex justify-center items-center w-full h-1/5 border-[1px]">Footer</div>
+      <footer className="text-gray-400 text-sm flex justify-center items-center py-4 border-t border-gray-700">
+        © 2025 Instagram Clone
+      </footer>
     </section>
-  )
-}
+  );
+};
 
-export default Register
+export default Register;

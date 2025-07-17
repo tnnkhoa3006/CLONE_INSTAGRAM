@@ -1,43 +1,39 @@
-import React from 'react'
-import { useState } from 'react'
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { setPosts } from "../../redux/postSlice.js";
 import EmojiPicker from "emoji-picker-react";
 import EmojiEmotionsIcon from "@mui/icons-material/EmojiEmotions";
-import InsertPhotoIcon from '@mui/icons-material/InsertPhoto';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
-import CloseIcon from '@mui/icons-material/Close';
-import { toast } from 'react-hot-toast';
-import api from '../../services/axios';
-
+import InsertPhotoIcon from "@mui/icons-material/InsertPhoto";
+import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
+import CloseIcon from "@mui/icons-material/Close";
+import { toast } from "react-hot-toast";
+import api from "../../services/axios";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
-import { useDispatch, useSelector } from 'react-redux';
-import { setPosts } from '../../redux/postSlice.js';
 
 const Dialogaddpost = ({ isopen, onClose }) => {
     const [step, setStep] = useState(1);
     const [uploaded, setUploaded] = useState(false);
     const [inputText, setInputText] = useState("");
     const [imageUrl, setImageUrl] = useState(null);
-    const [imageFile, setImageFile] = useState(null); // Thêm state để lưu file gốc
+    const [imageFile, setImageFile] = useState(null);
     const [Edit, setEdit] = useState(false);
     const [loading, setLoading] = useState(false);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-    const { user } = useSelector(store => store.auth)
-    const { posts } = useSelector(store => store.post)
+    const { user } = useSelector((store) => store.auth);
+    const { posts } = useSelector((store) => store.post);
     const dispatch = useDispatch();
-    const [fileType, setFileType] = useState(""); // Thêm state này
+    const [fileType, setFileType] = useState("");
 
     const createPostHandler = async (e) => {
         const formData = new FormData();
         formData.append("caption", inputText);
-        formData.append("file", imageFile); // Gửi file gốc thay vì URL
+        formData.append("file", imageFile);
         try {
             setLoading(true);
             const res = await api.post("/post/addpost", formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                },
+                headers: { "Content-Type": "multipart/form-data" },
                 withCredentials: true,
-            })
+            });
             if (res.data.success) {
                 dispatch(setPosts([res.data.post, ...posts]));
                 toast.success(res.data.message);
@@ -54,7 +50,7 @@ const Dialogaddpost = ({ isopen, onClose }) => {
         } finally {
             setLoading(false);
         }
-    }
+    };
 
     const handleUpload = (e) => {
         const file = e.target.files[0];
@@ -65,10 +61,10 @@ const Dialogaddpost = ({ isopen, onClose }) => {
                 return;
             }
             const url = URL.createObjectURL(file);
-            setImageUrl(url); // URL để hiển thị
-            setImageFile(file); // File gốc để gửi lên server
+            setImageUrl(url);
+            setImageFile(file);
             setUploaded(true);
-            setFileType(file.type.startsWith("video/") ? "video" : "image"); // Xác định loại file
+            setFileType(file.type.startsWith("video/") ? "video" : "image");
         }
     };
 
@@ -85,239 +81,236 @@ const Dialogaddpost = ({ isopen, onClose }) => {
     const handlePrevStep = () => {
         if (step > 1) {
             setStep(step - 1);
+        } else {
+            setUploaded(false);
+            setImageUrl(null);
+            setImageFile(null);
         }
     };
 
-    if (!isopen) return null
+    // Hiệu ứng fade khi mở/đóng dialog
+    const [isFading, setIsFading] = useState(false);
+
+    useEffect(() => {
+        if (isopen) {
+            setIsFading(true);
+        } else {
+            setIsFading(false);
+        }
+    }, [isopen]);
+
+    if (!isopen && !isFading) return null;
+
     return (
-        <div className='fixed inset-0 z-50 flex bg-black bg-opacity-60 justify-center items-center'>
+        <div
+            className={`fixed inset-0 z-50 flex justify-center items-center px-2 sm:px-4 transition-opacity duration-300 ${isFading ? "opacity-100" : "opacity-0"
+                }`}
+            style={{ backgroundColor: isFading ? "rgba(0, 0, 0, 0.6)" : "rgba(0, 0, 0, 0)" }}
+        >
             {!uploaded && (
-                <div className="flex flex-col">
-                    <header className="flex justify-center items-center bg-black rounded-t-3xl p-2">
-                        <div className="text-base font-semibold">Create new post</div>
+                <div
+                    className={`flex flex-col w-full max-w-[90vw] sm:max-w-[500px] md:max-w-[600px] mx-auto transition-all duration-300 ${isFading ? "scale-100 opacity-100" : "scale-95 opacity-0"
+                        }`}
+                >
+                    <header className="flex justify-center items-center bg-black rounded-t-xl sm:rounded-t-3xl p-3 sm:p-4 relative">
+                        <div className="text-sm sm:text-base font-semibold">Create new post</div>
                     </header>
-                    <div className="w-[500px] h-[500px] bg-zinc-800 rounded-b-3xl flex flex-col justify-center items-center shadow">
-                        <div className="flex flex-col items-center">
-                            <InsertPhotoIcon style={{ fontSize: 80 }} />
-                            <h2 className="text-xl font-medium mb-2">Drag photos and videos here</h2>
+                    <div className="w-full h-[300px] sm:h-[400px] md:h-[500px] bg-zinc-800 rounded-b-xl sm:rounded-b-3xl flex flex-col justify-center items-center shadow overflow-hidden">
+                        <div className="flex flex-col items-center px-4">
+                            <InsertPhotoIcon className="text-4xl sm:text-5xl md:text-6xl mb-2" />
+                            <h2 className="text-base sm:text-lg md:text-xl font-medium mb-2 text-center">
+                                Drag photos and videos here
+                            </h2>
                         </div>
-                        <input type="file" className='hidden' onChange={handleUpload} accept="image/*,video/*" disabled={loading} />
+                        <input
+                            type="file"
+                            className="hidden"
+                            onChange={handleUpload}
+                            accept="image/*,video/*"
+                            disabled={loading}
+                        />
                         <button
-                            className={`px-4 py-2 rounded-md mt-4 ${loading
-                                    ? 'bg-gray-500 cursor-not-allowed'
-                                    : 'bg-blue-500 hover:bg-blue-600'
+                            className={`px-4 py-2 rounded-md mt-4 text-sm sm:text-base ${loading
+                                ? "bg-gray-500 cursor-not-allowed"
+                                : "bg-blue-500 hover:bg-blue-600"
                                 } text-white`}
                             onClick={() => !loading && document.querySelector('input[type="file"]').click()}
                             disabled={loading}
                         >
-                            {loading ? 'Processing...' : 'Select a file'}
+                            {loading ? "Processing..." : "Select a file"}
                         </button>
                     </div>
                 </div>
             )}
 
             {uploaded && (
-                <div className='fixed inset-0 z-50 flex justify-center items-center'>
-                    <div className="flex flex-col">
-                        <header className='flex items-center justify-center bg-black rounded-t-3xl p-2'>
-                            <KeyboardArrowLeftIcon
-                                onClick={loading ? null : (() => {
-                                    if (step === 1) {
-                                        setUploaded(false);
-                                        setImageUrl(null);
-                                        setImageFile(null);
-                                    } else {
-                                        handlePrevStep();
-                                    }
-                                })}
-                                style={{
-                                    fontSize: 30,
-                                    marginRight: 'auto',
-                                    cursor: loading ? 'not-allowed' : 'pointer',
-                                    opacity: loading ? 0.5 : 1
-                                }}
-                            />
-                            <div className="text-base font-semibold">
-                                {step === 1 ? 'Crop' : step === 2 ? 'Edit' : 'Create new post'}
+                <div
+                    className={`flex flex-col w-full max-w-[90vw] sm:max-w-[600px] md:max-w-[850px] lg:max-w-[900px] mx-auto transition-all duration-300 ${isFading ? "scale-100 opacity-100" : "scale-95 opacity-0"
+                        }`}
+                >
+                    <header className="flex items-center justify-between bg-black rounded-t-xl sm:rounded-t-3xl p-3 sm:p-4 relative">
+                        <KeyboardArrowLeftIcon
+                            onClick={loading ? null : handlePrevStep}
+                            className={`text-xl sm:text-2xl md:text-3xl ${loading ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+                                }`}
+                        />
+                        <div className="text-sm sm:text-base font-semibold absolute left-1/2 transform -translate-x-1/2">
+                            {step === 1 ? "Crop" : step === 2 ? "Edit" : "Create new post"}
+                        </div>
+                        {step === 3 ? (
+                            <div
+                                className={`text-xs sm:text-sm font-semibold ${loading
+                                    ? "text-gray-400 cursor-not-allowed"
+                                    : "text-blue-500 hover:underline cursor-pointer"
+                                    }`}
+                                onClick={loading ? null : createPostHandler}
+                            >
+                                {loading ? "Sharing..." : "Share"}
                             </div>
-                            {step === 3 ? (
-                                <div
-                                    className={`text-sm my-auto ml-auto font-semibold cursor-pointer ${loading
-                                            ? 'text-gray-400 cursor-not-allowed'
-                                            : 'text-blue-500 hover:underline'
-                                        }`}
-                                    onClick={loading ? null : createPostHandler}>
-                                    {loading ? 'Sharing...' : 'Share'}
-                                </div>
-                            ) : (
-                                <div
-                                    className={`text-sm my-auto ml-auto font-semibold ${loading
-                                            ? 'text-gray-400 cursor-not-allowed'
-                                            : 'text-blue-500 hover:underline cursor-pointer'
-                                        }`}
-                                    onClick={loading ? null : handleNextStep}>
-                                    Next
-                                </div>
-                            )
-                            }
-                        </header>
-                        {step === 1 && (
-                            <div className="w-[500px] h-[500px] bg-zinc-800 rounded-b-3xl relative overflow-hidden">
-                                <TransformWrapper
-                                    zoomAnimation={{ disabled: true }}
-                                    doubleClick={{ disabled: true }}
-                                    wheel={{ disabled: true }}
-                                    pinch={{ disabled: true }}
-                                    pan={{ disabled: false }}
-                                    panning={{ velocityDisabled: true }}
-                                    minScale={1}
-                                    maxScale={1}
-                                    initialScale={1}
-                                >
-                                    <TransformComponent wrapperClass="w-full h-full flex items-center justify-center">
-                                        {fileType === "video" ? (
-                                            <video src={imageUrl} controls className="w-full h-full object-cover" />
-                                        ) : (
-                                            <img
-                                                src={imageUrl}
-                                                alt="Uploaded"
-                                                className="w-full h-full object-cover"
-                                            />
-                                        )}
-                                    </TransformComponent>
-                                </TransformWrapper>
+                        ) : (
+                            <div
+                                className={`text-xs sm:text-sm font-semibold ${loading
+                                    ? "text-gray-400 cursor-not-allowed"
+                                    : "text-blue-500 hover:underline cursor-pointer"
+                                    }`}
+                                onClick={loading ? null : handleNextStep}
+                            >
+                                Next
                             </div>
                         )}
-                        {step === 2 && <div className="w-[850px] h-[500px] flex bg-zinc-800 rounded-b-3xl m-auto">
-                            <div className="w-[500px] h-full flex items-center justify-center">
-                                {fileType === "video" ? (
-                                    <video
-                                        src={imageUrl}
-                                        alt="Uploaded"
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <img
-                                        src={imageUrl}
-                                        alt="Uploaded"
-                                        className="w-full h-full object-cover"
-                                    />
-                                )}
-                            </div>
-                            <div className="w-[350px] flex flex-col">
-                                <div className="flex">
-                                    <button
-                                        onClick={() => setEdit(true)}
-                                        className="flex w-1/2 h-[40px] items-center justify-center border-b cursor-pointer focus:bg-zinc-700 focus:border-b-blue-500"
-                                    >
-                                        <span className="text-blue-500 focus:text-blue-500 text-[14px] font-semibold">Filters</span>
-                                    </button>
-                                    <button
-                                        onClick={() => setEdit(false)}
-                                        className="flex w-1/2 h-[40px] items-center justify-center border-b cursor-pointer focus:bg-zinc-700 focus:border-b-blue-500"
-                                    >
-                                        <span className="text-blue-500 text-[14px] font-semibold">Adjustmments</span>
-                                    </button>
-                                </div>
-                                <div className="flex">
-                                    {Edit ?
-                                        (
-                                            <div>text</div>
-                                        )
-                                        :
-                                        (
-                                            <div>caption</div>
-                                        )
-                                    }
-                                </div>
-                            </div>
-                        </div>}
-                        {step === 3 && (
-                            <div className="flex w-[850px] h-[500px] bg-zinc-800 rounded-b-3xl relative">
-                                {/* Overlay khi loading */}
-                                {loading && (
-                                    <div
-                                        className="absolute inset-0 bg-black bg-opacity-30 z-20 cursor-not-allowed"
-                                        style={{ pointerEvents: 'all' }}
-                                    >
-                                        {/* Có thể thêm spinner ở đây nếu muốn */}
-                                    </div>
-                                )}
-                                {/* Nội dung step 3 */}
-                                <div className="w-[500px] h-full flex">
+                    </header>
+
+                    {step === 1 && (
+                        <div
+                            className={`flex flex-col w-full max-w-[90vw] sm:max-w-[500px] md:max-w-[600px] lg:max-w-[700px] xl:max-w-[900px] mx-auto transition-all duration-300 ${isFading ? "scale-100 opacity-100" : "scale-95 opacity-0"}`}
+                        >
+                            <TransformWrapper
+                                zoomAnimation={{ disabled: true }}
+                                doubleClick={{ disabled: true }}
+                                wheel={{ disabled: true }}
+                                pinch={{ disabled: true }}
+                                pan={{ disabled: false }}
+                                panning={{ velocityDisabled: true }}
+                                minScale={1}
+                                maxScale={1}
+                                initialScale={1}
+                            >
+                                <TransformComponent wrapperClass="w-full h-full flex items-center justify-center">
                                     {fileType === "video" ? (
                                         <video
                                             src={imageUrl}
-                                            alt="Uploaded"
-                                            className="w-full h-full object-cover"
+                                            controls
+                                            className="w-full h-full object-contain"
                                         />
                                     ) : (
                                         <img
                                             src={imageUrl}
                                             alt="Uploaded"
-                                            className="w-full h-full object-cover"
+                                            className="w-full h-full object-contain"
                                         />
                                     )}
-                                </div>
-                                <div className="w-[350px] flex flex-col">
-                                    <div className="flex pt-[20px] pl-[20px] space-x-2 items-center">
-                                        <div className="flex justify-center">
-                                            <img className='w-[30px] h-[30px] rounded-full' src={user.ProfilePicture} alt="profileimage" />
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <div className="text-[14px] font-semibold">{user.username}</div>
-                                        </div>
-                                    </div>
-                                    <div className="flex w-full flex-col">
-                                        <div className='flex w-full h-[150px] pt-[10px] pl-[20px]'>
-                                            <textarea
-                                                className='w-[330px] bg-zinc-800 text-[14px] font-semibold outline-none resize-none'
-                                                type="text"
-                                                value={inputText}
-                                                onChange={(e) => setInputText(e.target.value)}
-                                                maxLength={2200}
-                                                disabled={loading}
-                                            />
-                                        </div>
-                                        <div className='flex w-[330px] pt-[10px] pl-[20px] items-center'>
-                                            <div className="relative">
-                                                <button
-                                                    onClick={() => setShowEmojiPicker(prev => !prev)}
-                                                    className="text-sm font-semibold"
-                                                >
-                                                    <EmojiEmotionsIcon titleAccess="Emoji" className="hover:text-gray-400" style={{ fontSize: 20, cursor: 'pointer' }} />
-                                                </button>
+                                </TransformComponent>
+                            </TransformWrapper>
+                        </div>
+                    )}
 
-                                                {showEmojiPicker && (
-                                                    <div className="absolute bottom-[40px] right-0 z-50 shadow-lg">
-                                                        <EmojiPicker
-                                                            onEmojiClick={handleEmojiClick}
-                                                            theme="dark"
-                                                            height={350}
-                                                        />
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="flex ml-auto text-[12px] text-gray-400">
-                                                {inputText.length}/2.200
-                                            </div>
-                                        </div>
-                                    </div>
+                    {step === 2 && (
+                        <div
+                            className={`w-full h-[350px] sm:h-[450px] md:h-[550px] lg:h-[600px] flex flex-col sm:flex-row bg-zinc-800 rounded-b-xl sm:rounded-b-3xl overflow-hidden transition-opacity duration-300 ${isFading ? "opacity-100" : "opacity-0"}`}
+                        >
+                            <div className="w-full sm:w-[60%] h-full flex items-center justify-center">
+                                {fileType === "video" ? (
+                                    <video src={imageUrl} className="w-full h-full object-contain" />
+                                ) : (
+                                    <img src={imageUrl} alt="Uploaded" className="w-full h-full object-contain" />
+                                )}
+                            </div>
+                            <div className="w-full sm:w-[40%] h-full flex flex-col overflow-y-auto bg-zinc-800 border-t sm:border-t-0 sm:border-l border-zinc-700">
+                                <div className="flex">
+                                    <button
+                                        onClick={() => setEdit(true)}
+                                        className="flex w-1/2 h-10 items-center justify-center border-b cursor-pointer focus:bg-zinc-700 focus:border-b-blue-500"
+                                    >
+                                        <span className="text-blue-500 text-sm font-semibold">Filters</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setEdit(false)}
+                                        className="flex w-1/2 h-10 items-center justify-center border-b cursor-pointer focus:bg-zinc-700 focus:border-b-blue-500"
+                                    >
+                                        <span className="text-blue-500 text-sm font-semibold">Adjustments</span>
+                                    </button>
+                                </div>
+                                <div className="flex flex-1 p-3">
+                                    {Edit ? <div>text</div> : <div>caption</div>}
                                 </div>
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
+
+                    {/* Step 3 */}
+                    {step === 3 && (
+                        <div
+                            className={`w-full h-[450px] sm:h-[500px] md:h-[550px] lg:h-[600px] bg-zinc-800 rounded-b-xl sm:rounded-b-3xl overflow-hidden transition-opacity duration-300 flex sm:flex-row flex-col ${isFading ? "opacity-100" : "opacity-0"}`}
+                        >
+                            {/* Overlay nếu loading */}
+                            {loading && (
+                                <div className="absolute inset-0 bg-black bg-opacity-30 z-20 cursor-not-allowed" style={{ pointerEvents: "all" }} />
+                            )}
+
+                            {/* Media hiển thị */}
+                            <div className="w-full sm:w-[60%] h-[250px] sm:h-full flex items-center justify-center">
+                                {fileType === "video" ? (
+                                    <video src={imageUrl} className="w-full h-full object-contain" />
+                                ) : (
+                                    <img src={imageUrl} alt="Uploaded" className="w-full h-full object-contain" />
+                                )}
+                            </div>
+
+                            {/* Caption nhập liệu */}
+                            <div className="w-full sm:w-[40%] h-[200px] sm:h-full flex flex-col overflow-y-auto bg-zinc-800 sm:bg-transparent border-t sm:border-t-0 sm:border-l border-zinc-700 relative">
+                                {/* User */}
+                                <div className="flex pt-4 pl-4 space-x-2 items-center">
+                                    <img className="w-8 h-8 rounded-full object-cover" src={user.ProfilePicture} alt="profileimage" />
+                                    <div className="text-sm font-semibold">{user.username}</div>
+                                </div>
+
+                                {/* Caption */}
+                                <div className="flex w-full flex-col flex-1 p-3">
+                                    <textarea
+                                        className="w-full bg-zinc-800 text-sm font-medium outline-none resize-none"
+                                        value={inputText}
+                                        onChange={(e) => setInputText(e.target.value)}
+                                        maxLength={2200}
+                                        disabled={loading}
+                                        placeholder="Write a caption..."
+                                    />
+                                    <div className="flex pt-2 items-center">
+                                        <button onClick={() => setShowEmojiPicker((prev) => !prev)}>
+                                            <EmojiEmotionsIcon className="hover:text-gray-400 text-lg" />
+                                        </button>
+                                        <div className="ml-auto text-xs text-gray-400">{inputText.length}/2,200</div>
+                                    </div>
+
+                                    {/* Emoji Picker */}
+                                    {showEmojiPicker && (
+                                        <div className="absolute bottom-10 right-2 z-50 shadow-lg">
+                                            <EmojiPicker onEmojiClick={handleEmojiClick} theme="dark" height={250} width={280} />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
             <button
                 onClick={onClose}
-                className="absolute top-4 right-8 text-zinc-300 hover:text-white"
-                style={{ zIndex: 100 }}
+                className="absolute top-3 right-3 sm:top-4 sm:right-4 md:top-6 md:right-6 text-white bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full p-1 sm:p-2 z-50 transition-all duration-200"
             >
-                <CloseIcon style={{ fontSize: 32 }} />
+                <CloseIcon className="text-lg sm:text-xl md:text-2xl" />
             </button>
         </div>
-    )
-}
+    );
+};
 
-export default Dialogaddpost
+export default Dialogaddpost;

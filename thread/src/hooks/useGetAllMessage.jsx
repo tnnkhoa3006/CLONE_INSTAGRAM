@@ -9,7 +9,7 @@ const useGetAllMessage = () => {
     
     useEffect(() => {
         const fetchAllMessage = async () => {
-            if (!user || !selectedUser?._id) return; // Kiểm tra cả user và selectedUser
+            if (!user || !selectedUser?._id) return;
             
             try {
                 const res = await api.get(`/message/all/${selectedUser._id}`, {withCredentials: true});
