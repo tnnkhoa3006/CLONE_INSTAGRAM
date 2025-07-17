@@ -36,6 +36,15 @@ function AppContent() {
   useListenPostDelete();
 
   useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
+  useEffect(() => {
     if (postLoading) {
       // When postLoading becomes true, set a 2-second timeout to hide Splashpage
       const timer = setTimeout(() => {
@@ -56,20 +65,22 @@ function AppContent() {
   return (
     <>
       <Toaster position="bottom-right" reverseOrder={false} />
-      {showSplash && !isAuthRoute ? (
-        <Splashpage />
-      ) : (
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route element={<ProtectRoutes><MainLayout /></ProtectRoutes>}>
-            <Route path="/" element={<Home />} />
-            <Route path="/profile/:id" element={<Profile />} />
-            <Route path="/profile/edit" element={<EditProfile />} />
-            <Route path="/messages" element={<ChatMessage />} />
-          </Route>
-        </Routes>
-      )}
+      <div className="min-h-screen bg-white text-black dark:bg-black dark:text-white transition-all">
+        {showSplash && !isAuthRoute ? (
+          <Splashpage />
+        ) : (
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route element={<ProtectRoutes><MainLayout /></ProtectRoutes>}>
+              <Route path="/" element={<Home />} />
+              <Route path="/profile/:id" element={<Profile />} />
+              <Route path="/profile/edit" element={<EditProfile />} />
+              <Route path="/messages" element={<ChatMessage />} />
+            </Route>
+          </Routes>
+        )}
+      </div>
     </>
   );
 }

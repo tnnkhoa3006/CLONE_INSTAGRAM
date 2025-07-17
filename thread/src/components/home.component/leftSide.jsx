@@ -18,12 +18,14 @@ import GestureIcon from '@mui/icons-material/Gesture';
 import Dialogaddpost from '../modals/dialogaddpost';
 import NotificationPanel from '../modals/NotificationPanel';
 import SearchPanel from '../modals/SearchPanel';
+import MoreModal from '../modals/dialogmore';
 
 const LeftSide = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [showAddPost, setShowAddPost] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showMore, setShowMore] = useState(false);
   const [hasSeenNotifications, setHasSeenNotifications] = useState(() => {
     return localStorage.getItem('hasSeenNotifications') === 'true';
   });
@@ -263,11 +265,13 @@ const LeftSide = () => {
                   Threads
                 </div>
               </div>
-              <div className="w-full h-12 flex items-center space-x-4 hover:bg-zinc-800 rounded-md px-3 cursor-pointer">
+              <div
+                className="w-full h-12 flex items-center space-x-4 hover:bg-zinc-800 rounded-md px-3 cursor-pointer"
+                onClick={() => setShowMore(true)}
+              >
                 <MenuIcon style={{ fontSize: 24, color: '#fff' }} />
                 <div
-                  className={`text-sm font-medium ${showNotifications || showSearch ? 'hidden' : 'inline'
-                    } text-gray-400`}
+                  className={`text-sm font-medium ${showNotifications || showSearch ? 'hidden' : 'inline'} text-gray-400`}
                 >
                   More
                 </div>
@@ -292,14 +296,13 @@ const LeftSide = () => {
             }}
             className="relative p-1 hover:bg-zinc-800 rounded-md"
           >
-            {showNotifications ? (
-              <FavoriteIcon style={{ fontSize: 26, color: '#fff' }} />
-            ) : (
-              <FavoriteBorderIcon style={{ fontSize: 26, color: '#fff' }} />
-            )}
+            <FavoriteBorderIcon style={{ fontSize: 26, color: '#fff' }} />
             {likeNotifications?.length > 0 && !hasSeenNotifications && (
               <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></div>
             )}
+          </div>
+          <div onClick={() => setShowMore(true)} className="p-1 hover:bg-zinc-800 rounded-md">
+            <MenuIcon style={{ fontSize: 26, color: '#fff' }} />
           </div>
         </div>
       </div>
@@ -358,6 +361,10 @@ const LeftSide = () => {
       {showNotifications && (
         <NotificationPanel ref={notificationRef} likeNotifications={likeNotifications} onClose={() => setShowNotifications(false)} />
       )}
+      {showMore && (
+        <MoreModal isOpen={showMore} onClose={() => setShowMore(false)} />
+      )}
+
     </>
   );
 };

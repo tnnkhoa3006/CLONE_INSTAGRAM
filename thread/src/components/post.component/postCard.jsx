@@ -113,7 +113,7 @@ const PostCard = ({ postId }) => {
 
   return (
     <div>
-      <div className="w-full max-w-[560px] mx-auto bg-black text-white space-y-2">
+      <div className="w-full max-w-[500px] md:w-[500px] mx-auto bg-black text-white space-y-2">
         {/* Header */}
         <div className="w-full h-[50px] flex items-center pl-4 md:pl-[80px] space-x-2">
           <img
@@ -142,20 +142,22 @@ const PostCard = ({ postId }) => {
 
         {/* Image */}
         <div className="w-full pl-4 md:pl-[80px]">
-          {post.mediaType === "video" ? (
-            <video
-              className="w-full object-cover rounded"
-              src={post.mediaUrl}
-              controls
-              style={{ maxHeight: 500 }}
-            />
-          ) : (
-            <img
-              className="w-full object-cover rounded"
-              src={post.mediaUrl}
-              alt="post"
-            />
-          )}
+          <div className="w-full md:border md:border-zinc-800">
+            {post.mediaType === "video" ? (
+              <video
+                className="w-full object-cover rounded"
+                src={post.mediaUrl}
+                controls
+                style={{ maxHeight: 500 }}
+              />
+            ) : (
+              <img
+                className="w-full object-cover rounded"
+                src={post.mediaUrl}
+                alt="post"
+              />
+            )}
+          </div>
           <div className="flex w-full h-[50px] text-[14px] space-x-4 items-center pl-4 md:pl-0">
             {liked ? (
               <FavoriteRoundedIcon

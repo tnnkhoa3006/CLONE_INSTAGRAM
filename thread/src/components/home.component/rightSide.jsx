@@ -36,20 +36,6 @@ const RightSide = () => {
     }
   };
 
-  const logoutHandler = async () => {
-    try {
-      const res = await api.get('/user/logout', { withCredentials: true });
-      if (res.data.success) {
-        dispatch(setAuthUser(null));
-        dispatch(setPosts([]));
-        navigate('/login');
-        toast.success(res.data.message);
-      }
-    } catch (error) {
-      toast.error(error.response.data.message);
-    }
-  };
-
   return (
     <div className="hidden md:block w-[380px] px-4 pt-8 bg-black">
       {/* User info */}
@@ -124,16 +110,6 @@ const RightSide = () => {
         ) : (
           <div className="text-gray-400 text-sm pl-2 mt-2">No suggestions</div>
         )}
-      </div>
-      {/* Logout */}
-      <div className="pt-6 md:pt-8">
-        <div
-          onClick={logoutHandler}
-          className="flex items-center space-x-2 cursor-pointer hover:bg-zinc-800 rounded-md px-3 py-1 md:px-4 md:py-2 w-fit"
-        >
-          <ExitToAppIcon style={{ fontSize: 20, color: '#fff' }} />
-          <span className="text-base font-medium text-white">Logout</span>
-        </div>
       </div>
     </div>
   );
