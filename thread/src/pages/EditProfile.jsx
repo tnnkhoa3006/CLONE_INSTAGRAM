@@ -4,11 +4,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/axios';
 import toast from 'react-hot-toast';
 import { setAuthUser } from '../redux/authSlice.js';
+import ChangePasswordModal from '../components/modals/ChangePasswordModal.jsx';
 
 const EditProfile = () => {
   const imageRef = useRef();
   const { user } = useSelector(store => store.auth);
   const [loading, setLoading] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+
   const [input, setInput] = useState({
     profilePhoto: user?.ProfilePicture,
     bio: user?.bio,
@@ -121,20 +124,33 @@ const EditProfile = () => {
             </select>
           </div>
 
-          {/* Submit */}
-          <div className="flex justify-end">
-            <button
-              onClick={editProfileHandler}
-              disabled={loading}
-              className={`text-white h-10 text-sm font-semibold bg-blue-700 hover:bg-blue-500 rounded-lg px-10 ${
-                loading ? "opacity-70 cursor-not-allowed" : ""
-              }`}
-            >
-              {loading ? "Loading..." : "Submit"}
-            </button>
+          <div className="flex">
+            <div className="flex mr-auto">
+              <button
+                onClick={() => setShowPasswordModal(true)}
+                className="text-white h-10 text-sm font-semibold bg-red-700 hover:bg-red-500 rounded-lg px-6"
+              >
+                Change Password
+              </button>
+            </div>
+
+            {/* Submit */}
+            <div className="flex flex-end">
+              <button
+                onClick={editProfileHandler}
+                disabled={loading}
+                className={`text-white h-10 text-sm font-semibold bg-blue-700 hover:bg-blue-500 rounded-lg px-10 ${loading ? "opacity-70 cursor-not-allowed" : ""
+                  }`}
+              >
+                {loading ? "Loading..." : "Submit"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
+      {showPasswordModal && (
+        <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />
+      )}
     </div>
   );
 };

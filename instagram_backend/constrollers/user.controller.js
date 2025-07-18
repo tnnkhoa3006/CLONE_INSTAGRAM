@@ -53,7 +53,7 @@ export const login = async (req, res) => {
       return res.status(401).json({
         message: "Invalid email or password, please check!",
         success: false
-      })     
+      })
     };
 
     let user = await User.findOne({ email })
@@ -180,26 +180,26 @@ export const getProfile = async (req, res) => {
 export const editProfile = async (req, res) => {
   try {
     const userId = req.id;
-    const {bio, gender} = req.body;
+    const { bio, gender } = req.body;
     const ProfilePicture = req.file;
     let cloudResponse;
-    
-    if(ProfilePicture) {
+
+    if (ProfilePicture) {
       const fileUrl = getDataUri(ProfilePicture);
       cloudResponse = await cloudinary.uploader.upload(fileUrl);
     }
 
     const user = await User.findById(userId).select("-password");
-    if(!user) {
+    if (!user) {
       return res.status(401).json({
         message: "User does not exist",
         success: false
       });
     }
 
-    if(bio) user.bio = bio;
-    if(gender) user.gender = gender;
-    if(cloudResponse) user.ProfilePicture = cloudResponse.secure_url;
+    if (bio) user.bio = bio;
+    if (gender) user.gender = gender;
+    if (cloudResponse) user.ProfilePicture = cloudResponse.secure_url;
 
     await user.save();
 
@@ -208,15 +208,15 @@ export const editProfile = async (req, res) => {
       success: true,
       user
     })
-  }catch (error) {
+  } catch (error) {
     console.log(error);
   }
 }
 
 export const getSuggestedUsers = async (req, res) => {
   try {
-    const suggestedUsers = await User.find({_id:{$ne: req.id}}).select("-password");
-    if(!suggestedUsers) {
+    const suggestedUsers = await User.find({ _id: { $ne: req.id } }).select("-password");
+    if (!suggestedUsers) {
       return res.status(400).json({
         message: "Currently do not have any users",
       })
@@ -256,8 +256,8 @@ export const followOrunfollow = async (req, res) => {
     if (isfollowing) {
       // unfollow logic
       await Promise.all([
-        User.updateOne({_id : followerId}, {$pull: {following: followingId}}),
-        User.updateOne({_id : followingId}, {$pull: {followers: followerId}})
+        User.updateOne({ _id: followerId }, { $pull: { following: followingId } }),
+        User.updateOne({ _id: followingId }, { $pull: { followers: followerId } })
       ])
       return res.status(200).json({
         message: "Unfollowed successfully",
@@ -266,8 +266,8 @@ export const followOrunfollow = async (req, res) => {
     } else {
       // follow logic
       await Promise.all([
-        User.updateOne({_id : followerId}, {$push: {following: followingId}}),
-        User.updateOne({_id : followingId}, {$push: {followers: followerId}})
+        User.updateOne({ _id: followerId }, { $push: { following: followingId } }),
+        User.updateOne({ _id: followingId }, { $push: { followers: followerId } })
       ])
       return res.status(200).json({
         message: "Followed successfully",
@@ -278,3 +278,48 @@ export const followOrunfollow = async (req, res) => {
     console.log(error);
   }
 }
+
+export const changePassword = async (req, res) => {
+  try {
+    const userId = req.id;
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({
+        message: "Please provide both old and new passwords.",
+        success: false,
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found.",
+        success: false,
+      });
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({
+        message: "Old password is incorrect.",
+        success: false,
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    return res.status(200).json({
+      message: "Password updated successfully.",
+      success: true,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Server error during password change.",
+      success: false,
+    });
+  }
+};

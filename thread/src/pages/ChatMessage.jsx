@@ -87,6 +87,10 @@ const ChatMessage = () => {
                 u._id &&
                 index === self.findIndex((x) => x._id === u._id)
         );
+        
+    const handleBack = () => {
+        dispatch(setSelectedUser(null));
+    };
 
     return (
         <div className="flex flex-col md:flex-row w-full h-screen bg-black text-white">
@@ -159,7 +163,7 @@ const ChatMessage = () => {
                         </header>
 
                         {/* Message Area */}
-                        <div className="flex-1 overflow-y-auto border-[1px]">
+                        <div className="flex-1 overflow-y-auto">
                             <Message selectedUser={selectedUser} />
                         </div>
 
