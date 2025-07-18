@@ -52,7 +52,7 @@ const Message = ({ selectedUser }) => {
       )}
 
       {/* Messages */}
-      <div className="px-4 space-y-2 pb-16">
+      <div className="px-4 space-y-2 pb-24 md:pb-0">
         {loading ? (
           Array(5)
             .fill(0)

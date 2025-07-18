@@ -163,7 +163,9 @@ const LeftSide = () => {
                 Search
               </div>
             </div>
-            <div className="w-full h-12 flex items-center space-x-4 hover:bg-zinc-800 rounded-md px-3 cursor-pointer">
+            <div className="w-full h-12 flex items-center space-x-4 hover:bg-zinc-800 rounded-md px-3 cursor-pointer"
+              onClick={() => navigate('/reels')}
+            >
               <SlideshowOutlinedIcon style={{ fontSize: 24, color: '#fff' }} />
               <div
                 className={`text-sm font-medium ${showNotifications || showSearch ? 'hidden' : 'inline'

@@ -38,7 +38,6 @@ const Dialogaddpost = ({ isopen, onClose }) => {
                 dispatch(setPosts([res.data.post, ...posts]));
                 toast.success(res.data.message);
                 onClose();
-                // Reset states
                 setStep(1);
                 setUploaded(false);
                 setInputText("");
@@ -88,14 +87,13 @@ const Dialogaddpost = ({ isopen, onClose }) => {
         }
     };
 
-    // Hiệu ứng fade khi mở/đóng dialog
     const [isFading, setIsFading] = useState(false);
 
     useEffect(() => {
         if (isopen) {
             setIsFading(true);
         } else {
-            setIsFading(false);
+            setTimeout(() => setIsFading(false), 300); // Delay to match transition duration
         }
     }, [isopen]);
 
@@ -103,22 +101,22 @@ const Dialogaddpost = ({ isopen, onClose }) => {
 
     return (
         <div
-            className={`fixed inset-0 z-50 flex justify-center items-center px-2 sm:px-4 transition-opacity duration-300 ${isFading ? "opacity-100" : "opacity-0"
+            className={`fixed inset-0 z-50 flex justify-center items-center px-4 transition-opacity duration-300 ${isFading ? "opacity-100" : "opacity-0"
                 }`}
             style={{ backgroundColor: isFading ? "rgba(0, 0, 0, 0.6)" : "rgba(0, 0, 0, 0)" }}
         >
             {!uploaded && (
                 <div
-                    className={`flex flex-col w-full max-w-[90vw] sm:max-w-[500px] md:max-w-[600px] mx-auto transition-all duration-300 ${isFading ? "scale-100 opacity-100" : "scale-95 opacity-0"
+                    className={`flex flex-col w-full max-w-[min(90vw,500px)] sm:max-w-[min(90vw,600px)] transition-all duration-300 ${isFading ? "scale-100 opacity-100" : "scale-95 opacity-0"
                         }`}
                 >
-                    <header className="flex justify-center items-center bg-black rounded-t-xl sm:rounded-t-3xl p-3 sm:p-4 relative">
-                        <div className="text-sm sm:text-base font-semibold">Create new post</div>
+                    <header className="flex justify-center items-center bg-black rounded-t-xl p-4 relative">
+                        <div className="text-base font-semibold">Create new post</div>
                     </header>
-                    <div className="w-full h-[300px] sm:h-[400px] md:h-[500px] bg-zinc-800 rounded-b-xl sm:rounded-b-3xl flex flex-col justify-center items-center shadow overflow-hidden">
+                    <div className="w-full h-[50vh] max-h-[400px] sm:max-h-[500px] bg-zinc-800 rounded-b-xl flex flex-col justify-center items-center shadow overflow-hidden">
                         <div className="flex flex-col items-center px-4">
-                            <InsertPhotoIcon className="text-4xl sm:text-5xl md:text-6xl mb-2" />
-                            <h2 className="text-base sm:text-lg md:text-xl font-medium mb-2 text-center">
+                            <InsertPhotoIcon className="text-5xl mb-2" />
+                            <h2 className="text-lg font-medium mb-4 text-center">
                                 Drag photos and videos here
                             </h2>
                         </div>
@@ -128,13 +126,12 @@ const Dialogaddpost = ({ isopen, onClose }) => {
                             onChange={handleUpload}
                             accept="image/*,video/*"
                             disabled={loading}
+                            id="file-upload"
                         />
                         <button
-                            className={`px-4 py-2 rounded-md mt-4 text-sm sm:text-base ${loading
-                                ? "bg-gray-500 cursor-not-allowed"
-                                : "bg-blue-500 hover:bg-blue-600"
+                            className={`px-4 py-2 rounded-md text-base ${loading ? "bg-gray-500 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"
                                 } text-white`}
-                            onClick={() => !loading && document.querySelector('input[type="file"]').click()}
+                            onClick={() => !loading && document.getElementById("file-upload").click()}
                             disabled={loading}
                         >
                             {loading ? "Processing..." : "Select a file"}
@@ -145,21 +142,20 @@ const Dialogaddpost = ({ isopen, onClose }) => {
 
             {uploaded && (
                 <div
-                    className={`flex flex-col w-full max-w-[90vw] sm:max-w-[600px] md:max-w-[850px] lg:max-w-[900px] mx-auto transition-all duration-300 ${isFading ? "scale-100 opacity-100" : "scale-95 opacity-0"
+                    className={`flex flex-col w-full max-w-[min(90vw,900px)] transition-all duration-300 ${isFading ? "scale-100 opacity-100" : "scale-95 opacity-0"
                         }`}
                 >
-                    <header className="flex items-center justify-between bg-black rounded-t-xl sm:rounded-t-3xl p-3 sm:p-4 relative">
+                    <header className="flex items-center justify-between bg-black rounded-t-xl p-4 relative">
                         <KeyboardArrowLeftIcon
                             onClick={loading ? null : handlePrevStep}
-                            className={`text-xl sm:text-2xl md:text-3xl ${loading ? "cursor-not-allowed opacity-50" : "cursor-pointer"
-                                }`}
+                            className={`text-2xl ${loading ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
                         />
-                        <div className="text-sm sm:text-base font-semibold absolute left-1/2 transform -translate-x-1/2">
+                        <div className="text-base font-semibold absolute left-1/2 transform -translate-x-1/2">
                             {step === 1 ? "Crop" : step === 2 ? "Edit" : "Create new post"}
                         </div>
                         {step === 3 ? (
                             <div
-                                className={`text-xs sm:text-sm font-semibold ${loading
+                                className={`text-sm font-semibold ${loading
                                     ? "text-gray-400 cursor-not-allowed"
                                     : "text-blue-500 hover:underline cursor-pointer"
                                     }`}
@@ -169,7 +165,7 @@ const Dialogaddpost = ({ isopen, onClose }) => {
                             </div>
                         ) : (
                             <div
-                                className={`text-xs sm:text-sm font-semibold ${loading
+                                className={`text-sm font-semibold ${loading
                                     ? "text-gray-400 cursor-not-allowed"
                                     : "text-blue-500 hover:underline cursor-pointer"
                                     }`}
@@ -182,7 +178,8 @@ const Dialogaddpost = ({ isopen, onClose }) => {
 
                     {step === 1 && (
                         <div
-                            className={`flex flex-col w-full max-w-[90vw] sm:max-w-[500px] md:max-w-[600px] lg:max-w-[700px] xl:max-w-[900px] mx-auto transition-all duration-300 ${isFading ? "scale-100 opacity-100" : "scale-95 opacity-0"}`}
+                            className={`w-full h-[50vh] max-h-[500px] sm:max-h-[600px] flex items-center justify-center bg-zinc-800 rounded-b-xl overflow-hidden transition-opacity duration-300 ${isFading ? "opacity-100" : "opacity-0"
+                                }`}
                         >
                             <TransformWrapper
                                 zoomAnimation={{ disabled: true }}
@@ -200,13 +197,13 @@ const Dialogaddpost = ({ isopen, onClose }) => {
                                         <video
                                             src={imageUrl}
                                             controls
-                                            className="w-full h-full object-contain"
+                                            className="w-full h-full object-contain aspect-auto"
                                         />
                                     ) : (
                                         <img
                                             src={imageUrl}
                                             alt="Uploaded"
-                                            className="w-full h-full object-contain"
+                                            className="w-full h-full object-contain aspect-auto"
                                         />
                                     )}
                                 </TransformComponent>
@@ -216,16 +213,17 @@ const Dialogaddpost = ({ isopen, onClose }) => {
 
                     {step === 2 && (
                         <div
-                            className={`w-full h-[350px] sm:h-[450px] md:h-[550px] lg:h-[600px] flex flex-col sm:flex-row bg-zinc-800 rounded-b-xl sm:rounded-b-3xl overflow-hidden transition-opacity duration-300 ${isFading ? "opacity-100" : "opacity-0"}`}
+                            className={`w-full h-[50vh] max-h-[600px] flex flex-col sm:flex-row bg-zinc-800 rounded-b-xl overflow-hidden transition-opacity duration-300 ${isFading ? "opacity-100" : "opacity-0"
+                                }`}
                         >
-                            <div className="w-full sm:w-[60%] h-full flex items-center justify-center">
+                            <div className="w-full sm:w-[60%] h-[60%] sm:h-full flex items-center justify-center">
                                 {fileType === "video" ? (
-                                    <video src={imageUrl} className="w-full h-full object-contain" />
+                                    <video src={imageUrl} className="w-full h-full object-contain aspect-auto" />
                                 ) : (
-                                    <img src={imageUrl} alt="Uploaded" className="w-full h-full object-contain" />
+                                    <img src={imageUrl} alt="Uploaded" className="w-full h-full object-contain aspect-auto" />
                                 )}
                             </div>
-                            <div className="w-full sm:w-[40%] h-full flex flex-col overflow-y-auto bg-zinc-800 border-t sm:border-t-0 sm:border-l border-zinc-700">
+                            <div className="w-full sm:w-[40%] h-[40%] sm:h-full flex flex-col overflow-y-auto bg-zinc-800 border-t sm:border-t-0 sm:border-l border-zinc-700">
                                 <div className="flex">
                                     <button
                                         onClick={() => setEdit(true)}
@@ -241,73 +239,70 @@ const Dialogaddpost = ({ isopen, onClose }) => {
                                     </button>
                                 </div>
                                 <div className="flex flex-1 p-3">
-                                    {Edit ? <div>text</div> : <div>caption</div>}
+                                    {Edit ? <div>Filters (Placeholder)</div> : <div>Adjustments (Placeholder)</div>}
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* Step 3 */}
                     {step === 3 && (
                         <div
-                            className={`w-full h-[450px] sm:h-[500px] md:h-[550px] lg:h-[600px] bg-zinc-800 rounded-b-xl sm:rounded-b-3xl overflow-hidden transition-opacity duration-300 flex sm:flex-row flex-col ${isFading ? "opacity-100" : "opacity-0"}`}
+                            className={`w-full h-[60vh] max-h-[600px] bg-zinc-800 rounded-b-xl overflow-hidden transition-opacity duration-300 flex flex-col sm:flex-row ${isFading ? "opacity-100" : "opacity-0"
+                                }`}
                         >
-                            {/* Overlay nếu loading */}
                             {loading && (
-                                <div className="absolute inset-0 bg-black bg-opacity-30 z-20 cursor-not-allowed" style={{ pointerEvents: "all" }} />
+                                <div className="absolute inset-0 bg-black bg-opacity-30 z-20 flex items-center justify-center">
+                                    <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                </div>
                             )}
-
-                            {/* Media hiển thị */}
-                            <div className="w-full sm:w-[60%] h-[250px] sm:h-full flex items-center justify-center">
+                            <div className="w-full sm:w-[60%] h-[50%] sm:h-full flex items-center justify-center">
                                 {fileType === "video" ? (
-                                    <video src={imageUrl} className="w-full h-full object-contain" />
+                                    <video src={imageUrl} className="w-full h-full object-contain aspect-auto" />
                                 ) : (
-                                    <img src={imageUrl} alt="Uploaded" className="w-full h-full object-contain" />
+                                    <img src={imageUrl} alt="Uploaded" className="w-full h-full object-contain aspect-auto" />
                                 )}
                             </div>
-
-                            {/* Caption nhập liệu */}
-                            <div className="w-full sm:w-[40%] h-[200px] sm:h-full flex flex-col overflow-y-auto bg-zinc-800 sm:bg-transparent border-t sm:border-t-0 sm:border-l border-zinc-700 relative">
-                                {/* User */}
+                            <div className="w-full sm:w-[40%] h-[50%] sm:h-full flex flex-col overflow-y-auto bg-zinc-800 sm:bg-transparent border-t sm:border-t-0 sm:border-l border-zinc-700 relative">
                                 <div className="flex pt-4 pl-4 space-x-2 items-center">
                                     <img className="w-8 h-8 rounded-full object-cover" src={user.ProfilePicture} alt="profileimage" />
                                     <div className="text-sm font-semibold">{user.username}</div>
                                 </div>
-
-                                {/* Caption */}
-                                <div className="flex w-full flex-col flex-1 p-3">
+                                <div className="flex w-full h-full flex-col flex-1 p-3">
                                     <textarea
-                                        className="w-full bg-zinc-800 text-sm font-medium outline-none resize-none"
+                                        className="w-full bg-zinc-800 text-sm font-medium outline-none resize-none h-full"
                                         value={inputText}
                                         onChange={(e) => setInputText(e.target.value)}
                                         maxLength={2200}
                                         disabled={loading}
                                         placeholder="Write a caption..."
                                     />
-                                    <div className="flex pt-2 items-center">
-                                        <button onClick={() => setShowEmojiPicker((prev) => !prev)}>
+                                    <div className="flex mt-2 items-center">
+                                        <button className="hidden md:block" onClick={() => setShowEmojiPicker((prev) => !prev)}>
                                             <EmojiEmotionsIcon className="hover:text-gray-400 text-lg" />
                                         </button>
                                         <div className="ml-auto text-xs text-gray-400">{inputText.length}/2,200</div>
                                     </div>
-
-                                    {/* Emoji Picker */}
-                                    {showEmojiPicker && (
-                                        <div className="absolute bottom-10 right-2 z-50 shadow-lg">
-                                            <EmojiPicker onEmojiClick={handleEmojiClick} theme="dark" height={250} width={280} />
-                                        </div>
-                                    )}
                                 </div>
                             </div>
+                        </div>
+                    )}
+                    {showEmojiPicker && (
+                        <div className="absolute bottom-10 right-2 z-50 shadow-lg max-w-[80vw] sm:max-w-[280px]">
+                            <EmojiPicker
+                                onEmojiClick={handleEmojiClick}
+                                theme="dark"
+                                height={350}
+                                width="100%"
+                            />
                         </div>
                     )}
                 </div>
             )}
             <button
                 onClick={onClose}
-                className="absolute top-3 right-3 sm:top-4 sm:right-4 md:top-6 md:right-6 text-white bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full p-1 sm:p-2 z-50 transition-all duration-200"
+                className="absolute top-4 right-4 text-white bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full p-2 z-50 transition-all duration-200"
             >
-                <CloseIcon className="text-lg sm:text-xl md:text-2xl" />
+                <CloseIcon className="text-xl" />
             </button>
         </div>
     );

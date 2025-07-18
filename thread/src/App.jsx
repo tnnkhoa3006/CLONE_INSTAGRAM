@@ -6,6 +6,7 @@ import Register from './pages/Register';
 import Profile from './pages/Profile';
 import Splashpage from './pages/Splashpage';
 import ResetPassword from './pages/ResetPassword';
+import ReelsPage from './pages/ReelsPage';
 import './App.css';
 import { Toaster } from 'react-hot-toast';
 import MainLayout from './pages/mainLayout';
@@ -76,6 +77,7 @@ function AppContent() {
               <Route path="/profile/:id" element={<Profile />} />
               <Route path="/profile/edit" element={<EditProfile />} />
               <Route path="/messages" element={<ChatMessage />} />
+              <Route path="/reels" element={<ReelsPage />} />
             </Route>
           </Routes>
         )}

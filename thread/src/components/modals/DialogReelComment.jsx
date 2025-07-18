@@ -10,15 +10,58 @@ import BookmarkIcon from "@mui/icons-material/Bookmark";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import CloseIcon from "@mui/icons-material/Close";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import Dialogmore_option from "../modals/dialogmore_option";
+import Dialogmore_option from "./dialogmore_option";
 import CommentBox from "../post.component/commentBox";
 import { useDispatch, useSelector } from "react-redux";
 import api from "../../services/axios";
 import { toast } from "react-hot-toast";
 import { setPosts, setSelectedPost } from "../../redux/postSlice";
 
-const Dialogcomment = ({ isopen, onClose }) => {
-    const { selectedPost, posts } = useSelector((store) => store.post);
+function RepliesThread({ allComments, parentId, level, onReply, user, openReplies, setOpenReplies }) {
+    const replies = allComments.filter((cmt) => cmt.parentId === parentId);
+    if (replies.length === 0) return null;
+
+    const isVisible = openReplies[parentId] || false;
+
+    return (
+        <div style={{ marginLeft: level * 16 }}>
+            {!isVisible ? (
+                <span
+                    className="text-blue-400 text-xs cursor-pointer hover:underline"
+                    onClick={() => setOpenReplies((prev) => ({ ...prev, [parentId]: true }))}
+                >
+                    View replies ({replies.length})
+                </span>
+            ) : (
+                <>
+                    <span
+                        className="text-blue-400 text-xs cursor-pointer hover:underline"
+                        onClick={() => setOpenReplies((prev) => ({ ...prev, [parentId]: false }))}
+                    >
+                        Hide replies
+                    </span>
+                    {replies.map((reply) => (
+                        <div key={reply._id}>
+                            <CommentBox comment={reply} onReply={onReply} user={user} />
+                            <RepliesThread
+                                allComments={allComments}
+                                parentId={reply._id}
+                                level={level + 1}
+                                onReply={onReply}
+                                user={user}
+                                openReplies={openReplies}
+                                setOpenReplies={setOpenReplies}
+                            />
+                        </div>
+                    ))}
+                </>
+            )}
+        </div>
+    );
+}
+
+const DialogReelComment = ({ isOpen, onClose, post }) => {
+    const { posts } = useSelector((store) => store.post);
     const { user } = useSelector((store) => store.auth);
     const [showOptions, setShowOptions] = useState(false);
     const [replyTo, setReplyTo] = useState("");
@@ -29,21 +72,20 @@ const Dialogcomment = ({ isopen, onClose }) => {
     const [saved, setSaved] = useState(false);
     const dispatch = useDispatch();
     const [comment, setComment] = useState([]);
-    // State to manage visibility of replies for each parentId
-    const [replyVisibility, setReplyVisibility] = useState({});
+    const [openReplies, setOpenReplies] = useState({});
 
-    const liked = selectedPost?.likes?.includes(user?._id) || false;
-    const postLikes = selectedPost?.likes?.length || 0;
-    const post = posts.find((p) => p && p._id === selectedPost?._id);
+    const liked = post?.likes?.includes(user?._id) || false;
+    const postLikes = post?.likes?.length || 0;
+    const currentPost = posts.find((p) => p && p._id === post?._id);
 
     useEffect(() => {
-        if (selectedPost && user) {
-            setComment(selectedPost.comments || []);
-            setSaved(!!selectedPost.isBookmarked);
+        if (post && user) {
+            setComment(post.comments || []);
+            setSaved(!!post.isBookmarked);
         }
-    }, [selectedPost]);
+    }, [post, user]);
 
-    if (!isopen || !selectedPost) return null;
+    if (!isOpen || !post) return null;
 
     const handleEmojiClick = (emojiData) => {
         setText((prev) => prev + emojiData.emoji);
@@ -63,7 +105,7 @@ const Dialogcomment = ({ isopen, onClose }) => {
             if (replyParentId) {
                 payload.parentId = replyParentId;
             }
-            const res = await api.post(`/post/${selectedPost._id}/comment`, payload, {
+            const res = await api.post(`/post/${post._id}/comment`, payload, {
                 headers: { "Content-Type": "application/json" },
                 withCredentials: true,
             });
@@ -71,13 +113,10 @@ const Dialogcomment = ({ isopen, onClose }) => {
                 const updateCommentData = [...comment, res.data.comment];
                 setComment(updateCommentData);
                 const updatePostData = posts.map((p) =>
-                    p._id === selectedPost._id ? { ...p, comments: updateCommentData } : p
+                    p._id === post._id ? { ...p, comments: updateCommentData } : p
                 );
                 dispatch(setPosts(updatePostData));
-                const updatedSelectedPost = {
-                    ...selectedPost,
-                    comments: updateCommentData,
-                };
+                const updatedSelectedPost = { ...post, comments: updateCommentData };
                 dispatch(setSelectedPost(updatedSelectedPost));
                 toast.success(res.data.message);
                 setText("");
@@ -86,43 +125,36 @@ const Dialogcomment = ({ isopen, onClose }) => {
                 setShowEmojiPicker(false);
             }
         } catch (error) {
-            console.log(error);
-            toast.error(error.response.data.message);
+            toast.error(error?.response?.data?.message || "Có lỗi xảy ra");
         }
     };
 
     const likeOrDislikeHandler = async () => {
         try {
             const action = liked ? "dislike" : "like";
-            const res = await api.post(`/post/${selectedPost._id}/${action}`, {}, { withCredentials: true });
+            const res = await api.post(`/post/${post._id}/${action}`, {}, { withCredentials: true });
             if (res.data.success) {
                 const updatedPostData = posts.map((p) =>
-                    p._id === selectedPost._id
-                        ? {
-                            ...p,
-                            likes: liked ? p.likes.filter((id) => id !== user._id) : [...p.likes, user._id],
-                        }
+                    p._id === post._id
+                        ? { ...p, likes: liked ? p.likes.filter((id) => id !== user._id) : [...p.likes, user._id] }
                         : p
                 );
                 dispatch(setPosts(updatedPostData));
                 const updatedSelectedPost = {
-                    ...selectedPost,
-                    likes: liked
-                        ? selectedPost.likes.filter((id) => id !== user._id)
-                        : [...selectedPost.likes, user._id],
+                    ...post,
+                    likes: liked ? post.likes.filter((id) => id !== user._id) : [...post.likes, user._id],
                 };
                 dispatch(setSelectedPost(updatedSelectedPost));
                 toast.success(res.data.message);
             }
         } catch (error) {
-            console.log(error);
-            toast.error(error.response.data.message);
+            toast.error(error?.response?.data?.message || "Có lỗi xảy ra");
         }
     };
 
     const bookMarkHandler = async () => {
         try {
-            const res = await api.post(`/post/${selectedPost._id}/bookmark`, {}, { withCredentials: true });
+            const res = await api.post(`/post/${post._id}/bookmark`, {}, { withCredentials: true });
             if (res.data.success) {
                 const updatedPosts = posts.map((p) =>
                     p._id === post._id ? { ...p, isBookmarked: !saved } : p
@@ -132,68 +164,13 @@ const Dialogcomment = ({ isopen, onClose }) => {
                 toast.success(res.data.message);
             }
         } catch (error) {
-            console.log(error);
             toast.error(error?.response?.data?.message || "Có lỗi xảy ra");
         }
     };
 
-    const renderReplies = (allComments, parentId, level = 1) => {
-        const replies = allComments.filter((cmt) => cmt.parentId === parentId);
-        if (replies.length === 0) return null;
-
-        const isVisible = replyVisibility[parentId] || false;
-
-        return (
-            <div style={{ marginLeft: level * 16 }}>
-                {!isVisible ? (
-                    <span
-                        className="text-blue-400 text-xs cursor-pointer hover:underline"
-                        onClick={() => setReplyVisibility((prev) => ({ ...prev, [parentId]: true }))}
-                    >
-                        View replies ({replies.length})
-                    </span>
-                ) : (
-                    <>
-                        <span
-                            className="text-blue-400 text-xs cursor-pointer hover:underline"
-                            onClick={() => setReplyVisibility((prev) => ({ ...prev, [parentId]: false }))}
-                        >
-                            Hide replies
-                        </span>
-                        {replies.map((reply) => (
-                            <div key={reply._id}>
-                                <CommentBox comment={reply} onReply={handleReply} user={user} />
-                                {renderReplies(allComments, reply._id, level + 1)}
-                            </div>
-                        ))}
-                    </>
-                )}
-            </div>
-        );
-    };
-
     return (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-80 flex items-center justify-center safe-area-padding">
-            <article className="flex flex-col md:flex-row w-full h-full max-w-[500px] md:max-w-4xl bg-zinc-900 rounded-lg md:rounded-2xl overflow-hidden shadow-lg">
-                {/* Image/Video Section (Shown on Desktop, Hidden on Mobile) */}
-                <div className="hidden md:flex flex-shrink-0 bg-black items-center justify-center w-full md:w-[500px] h-[200px] md:h-full">
-                    {selectedPost?.mediaType === "video" ? (
-                        <video
-                            src={selectedPost?.mediaUrl}
-                            controls
-                            className="w-full h-full object-cover"
-                            style={{ minWidth: 0, minHeight: 0 }}
-                        />
-                    ) : (
-                        <img
-                            src={selectedPost?.mediaUrl}
-                            alt="imagepost"
-                            className="w-full h-full object-cover"
-                            style={{ minWidth: 0, minHeight: 0 }}
-                        />
-                    )}
-                </div>
-                {/* Content Section */}
+            <article className="flex flex-col w-full h-full max-w-[500px] md:max-w-4xl bg-zinc-900 rounded-lg md:rounded-2xl overflow-hidden shadow-lg">
                 <div className="flex flex-col w-full h-full">
                     {/* Header */}
                     <div className="flex items-center px-3 py-2 border-b border-zinc-700 bg-zinc-900 z-10">
@@ -202,11 +179,11 @@ const Dialogcomment = ({ isopen, onClose }) => {
                         </button>
                         <img
                             className="w-8 h-8 object-cover rounded-full border-2 border-r-pink-500 border-b-purple-400 border-l-yellow-400 border-t-orange-400 cursor-pointer"
-                            src={selectedPost?.author.ProfilePicture}
+                            src={post?.author.ProfilePicture}
                             alt="avatar"
                             onError={(e) => (e.target.src = "/default-avatar.png")}
                         />
-                        <span className="ml-2 text-sm font-semibold">{selectedPost?.author.username}</span>
+                        <span className="ml-2 text-sm font-semibold">{post?.author.username}</span>
                         <MoreHorizIcon
                             onClick={() => setShowOptions(true)}
                             titleAccess="More options"
@@ -216,34 +193,39 @@ const Dialogcomment = ({ isopen, onClose }) => {
                     </div>
                     {/* Body: Caption + Comments */}
                     <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
-                        {/* Caption */}
                         <div className="flex items-start gap-2">
                             <img
                                 className="w-8 h-8 object-cover rounded-full border-2 border-r-pink-500 border-b-purple-400 border-l-yellow-400 border-t-orange-400 cursor-pointer"
-                                src={selectedPost?.author.ProfilePicture}
+                                src={post?.author.ProfilePicture}
                                 alt="avatar"
                                 onError={(e) => (e.target.src = "/default-avatar.png")}
                             />
                             <div className="text-sm">
-                                <span className="font-semibold cursor-pointer">{selectedPost?.author.username}</span>{" "}
-                                <span className="font-normal">{selectedPost?.caption}</span>
+                                <span className="font-semibold cursor-pointer">{post?.author.username}</span>{" "}
+                                <span className="font-normal">{post?.caption}</span>
                             </div>
                         </div>
-                        {/* Comments */}
                         <div className="space-y-2">
                             {comment
                                 .filter((cmt) => !cmt.parentId)
                                 .map((cmt) => (
                                     <div key={cmt._id}>
                                         <CommentBox comment={cmt} onReply={handleReply} user={user} />
-                                        {renderReplies(comment, cmt._id)}
+                                        <RepliesThread
+                                            allComments={comment}
+                                            parentId={cmt._id}
+                                            level={1}
+                                            onReply={handleReply}
+                                            user={user}
+                                            openReplies={openReplies}
+                                            setOpenReplies={setOpenReplies}
+                                        />
                                     </div>
                                 ))}
                         </div>
                     </div>
                     {/* Footer: Actions + Add Comment */}
                     <div className="sticky bottom-0 px-3 py-2 border-t border-zinc-700 bg-zinc-900 z-10 safe-area-padding md:safe-area-padding-bottom">
-                        {/* Actions */}
                         <div className="flex items-center space-x-3 mb-2">
                             {liked ? (
                                 <FavoriteRoundedIcon
@@ -286,9 +268,7 @@ const Dialogcomment = ({ isopen, onClose }) => {
                                 />
                             )}
                         </div>
-                        {/* Likes */}
                         <div className="text-sm font-semibold mb-2">{postLikes} likes</div>
-                        {/* Add Comment */}
                         <div className="flex items-center gap-2">
                             <textarea
                                 ref={inputRef}
@@ -304,10 +284,7 @@ const Dialogcomment = ({ isopen, onClose }) => {
                                     Post
                                 </button>
                             )}
-                            <button
-                                onClick={() => setShowEmojiPicker((prev) => !prev)}
-                                className="p-1"
-                            >
+                            <button onClick={() => setShowEmojiPicker((prev) => !prev)} className="p-1">
                                 <EmojiEmotionsIcon
                                     titleAccess="Emoji"
                                     className="cursor-pointer hover:text-gray-400"
@@ -317,7 +294,6 @@ const Dialogcomment = ({ isopen, onClose }) => {
                         </div>
                     </div>
                 </div>
-                {/* Close Button */}
                 <button
                     onClick={onClose}
                     className="absolute top-2 right-2 text-zinc-300 hover:text-white safe-area-padding"
@@ -335,10 +311,10 @@ const Dialogcomment = ({ isopen, onClose }) => {
                         />
                     </div>
                 )}
-                <Dialogmore_option isOpen={showOptions} onClose={() => setShowOptions(false)} />
+                <Dialogmore_option isOpen={showOptions} onClose={() => setShowOptions(false)} post={post} />
             </article>
         </div>
     );
 };
 
-export default Dialogcomment;
+export default DialogReelComment;
