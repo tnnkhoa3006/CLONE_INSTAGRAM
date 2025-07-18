@@ -24,7 +24,6 @@ const ChatMessage = () => {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [input, setInput] = useState("");
     const dispatch = useDispatch();
-    const navigate = useNavigate();
     const inputRef = useRef(null);
 
     const handleEmojiClick = (emojiData) => {
@@ -63,23 +62,38 @@ const ChatMessage = () => {
         };
     }, [dispatch, user?._id]);
 
-    const following = user?.following || [];
-    const followers = user?.followers || [];
-    const normalize = (arr) => arr.map((f) => (typeof f === "object" ? f : { _id: f }));
-    const allUsers = [
-        ...normalize(following),
-        ...normalize(followers),
-    ].filter((user, index, self) => user && user._id && index === self.findIndex((u) => u._id === user._id));
+    // Chuẩn hoá list user theo object { _id, ... }
+    const normalize = (arr) =>
+        arr.map((f) => (typeof f === "object" ? f : { _id: f }));
 
-    const handleBack = () => {
-        dispatch(setSelectedUser(null));
-    };
+    // Xử lý theo danh sách suggestedUsers nếu đã có thông tin user đầy đủ
+    const following = normalize(user?.following || []);
+    const followers = normalize(user?.followers || []);
+    const suggested = suggestedUsers || [];
+
+    // Gộp lại danh sách người cần hiển thị
+    const allUsers = [
+        ...following,
+        ...followers,
+    ]
+        .map((u) => {
+            // Tìm lại thông tin từ suggestedUsers nếu có (để có profile picture, username...)
+            const full = suggested.find((s) => s._id === u._id);
+            return full || u;
+        })
+        .filter(
+            (u, index, self) =>
+                u &&
+                u._id &&
+                index === self.findIndex((x) => x._id === u._id)
+        );
 
     return (
         <div className="flex flex-col md:flex-row w-full h-screen bg-black text-white">
             {/* Sidebar (Hidden on Mobile when Chat is Active) */}
-            <div className={`flex flex-col w-full md:w-1/3 lg:w-1/4 border-r border-zinc-700 h-full ${selectedUser ? "hidden md:flex" : "flex"}`}>
-                <div className="w-full p-4 space-y-6">
+            <div className={`flex flex-col w-full md:w-1/3 lg:w-1/4 border-r border-zinc-700 ${selectedUser ? "hidden md:flex" : "flex"} h-[100dvh] min-h-0`}>
+                {/* Header cố định */}
+                <div className="p-4 pt-16 space-y-6 flex-shrink-0 bg-black z-10">
                     <div className="flex items-center justify-between">
                         <h1 className="font-bold text-xl">@{user?.username}</h1>
                         <DriveFileRenameOutlineOutlinedIcon className="cursor-pointer" />
@@ -89,36 +103,39 @@ const ChatMessage = () => {
                         <h1 className="text-sm text-zinc-400 cursor-pointer">Requests</h1>
                     </div>
                 </div>
+
+                {/* Danh sách user scrollable */}
                 <div className="flex-1 overflow-y-auto">
-                    {allUsers.map((friendUser) => {
-                        const isOnline = onlineUsers.includes(friendUser._id);
-                        return (
-                            <div
-                                key={friendUser._id}
-                                onClick={() => dispatch(setSelectedUser(friendUser))}
-                                className="flex items-center h-14 py-2 px-4 space-x-2 cursor-pointer hover:bg-zinc-800 transition-colors"
-                            >
-                                <img
-                                    className="w-10 h-10 object-cover rounded-full"
-                                    src={friendUser?.ProfilePicture}
-                                    alt=""
-                                />
-                                <div className="flex flex-col">
-                                    <div className="text-sm">{friendUser?.username}</div>
-                                    <div className="text-xs text-zinc-400">{isOnline ? "Active now" : "Offline"}</div>
+                    <div className="flex flex-col">
+                        {allUsers.map((friendUser) => {
+                            const isOnline = onlineUsers.includes(friendUser._id);
+                            return (
+                                <div
+                                    key={friendUser._id}
+                                    onClick={() => dispatch(setSelectedUser(friendUser))}
+                                    className="flex items-center h-14 py-2 px-4 space-x-2 cursor-pointer hover:bg-zinc-800 transition-colors"
+                                >
+                                    <img
+                                        className="w-10 h-10 object-cover rounded-full"
+                                        src={friendUser?.ProfilePicture}
+                                        alt=""
+                                    />
+                                    <div className="flex flex-col">
+                                        <div className="text-sm">{friendUser?.username}</div>
+                                        <div className="text-xs text-zinc-400">{isOnline ? "Active now" : "Offline"}</div>
+                                    </div>
                                 </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
-
             {/* Chat Area (Full-Screen on Mobile) */}
             <div className={`flex flex-col w-full h-screen ${selectedUser ? "flex" : "hidden md:flex"}`}>
                 {selectedUser ? (
-                    <>
+                    <div className="flex flex-col w-full h-full">
                         {/* Header */}
-                        <header className="flex items-center justify-between border-b border-zinc-700 px-3 py-2 h-14 bg-black z-20">
+                        <header className="flex w-full fixed items-center justify-between border-b border-zinc-700 px-3 py-2 h-14 bg-black z-20">
                             <div className="flex items-center space-x-2">
                                 <button onClick={handleBack} className="md:hidden p-1">
                                     <ArrowBackIcon style={{ fontSize: 24 }} />
@@ -126,7 +143,6 @@ const ChatMessage = () => {
                                 <img
                                     className="w-8 h-8 object-cover rounded-full"
                                     src={selectedUser?.ProfilePicture}
-                                    alt=""
                                 />
                                 <div className="flex flex-col">
                                     <div className="text-sm font-semibold">{selectedUser?.username}</div>
@@ -135,7 +151,7 @@ const ChatMessage = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex items-center space-x-3 pr-2">
+                            <div className="flex ml-auto space-x-3 pr-2">
                                 <CallOutlinedIcon style={{ fontSize: 20 }} className="cursor-pointer" />
                                 <VideocamOutlinedIcon style={{ fontSize: 20 }} className="cursor-pointer" />
                                 <HelpOutlineOutlinedIcon style={{ fontSize: 20 }} className="cursor-pointer" />
@@ -143,12 +159,12 @@ const ChatMessage = () => {
                         </header>
 
                         {/* Message Area */}
-                        <div className="flex-1 overflow-y-auto">
+                        <div className="flex-1 overflow-y-auto border-[1px]">
                             <Message selectedUser={selectedUser} />
                         </div>
 
                         {/* Footer */}
-                        <footer className="sticky bottom-0 p-3 bg-black z-20 safe-area-padding">
+                        <footer className="w-full fixed bottom-0 p-3 bg-black z-20 safe-area-padding">
                             <div className="flex items-center border border-zinc-700 px-3 py-2 rounded-full bg-zinc-900 shadow-md">
                                 <button
                                     onClick={() => setShowEmojiPicker((prev) => !prev)}
@@ -193,7 +209,7 @@ const ChatMessage = () => {
                                 </div>
                             )}
                         </footer>
-                    </>
+                    </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full">
                         <CloudCircleOutlinedIcon style={{ fontSize: "80px md:100px" }} className="text-zinc-400" />

@@ -33,7 +33,7 @@ const Message = ({ selectedUser }) => {
       {loading ? (
         <Skeleton />
       ) : (
-        <div className="flex flex-col items-center py-8 px-4 space-y-3">
+        <div className="flex flex-col items-center py-20 px-4 space-y-3">
           <img
             className="w-20 h-20 object-cover rounded-full"
             src={selectedUser?.ProfilePicture}
@@ -52,7 +52,7 @@ const Message = ({ selectedUser }) => {
       )}
 
       {/* Messages */}
-      <div className="px-4 space-y-2 pb-4">
+      <div className="px-4 space-y-2 pb-16">
         {loading ? (
           Array(5)
             .fill(0)

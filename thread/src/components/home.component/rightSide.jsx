@@ -1,28 +1,36 @@
-import ExitToAppIcon from '@mui/icons-material/ExitToApp';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import api from '../../services/axios';
 import toast from 'react-hot-toast';
 import { useSelector, useDispatch } from 'react-redux';
 import { setAuthUser } from '../../redux/authSlice.js';
-import { setPosts } from '../../redux/postSlice.js';
 import useGetSuggestedUsers from '../../hooks/useGetSuggestedUsers.jsx';
 import { followOrUnfollowUser } from '../../services/user';
 import { useState } from 'react';
 
 const RightSide = () => {
-  const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user, suggestedUsers } = useSelector((store) => store.auth);
   useGetSuggestedUsers();
 
   // State to control display limit
   const [showAll, setShowAll] = useState(false);
-  const SUGGESTED_LIMIT = 9;
+  const SUGGESTED_LIMIT = 6;
+  const MAX_SUGGESTED_USERS = 50;
 
   // Filter displayed users
+  // Filter and then limit suggested users
+  const filteredSuggested = (suggestedUsers || [])
+    .filter(
+      (sugUser) =>
+        !user?.following?.some(
+          (f) => (typeof f === 'object' ? f._id === sugUser._id : f === sugUser._id)
+        )
+    )
+    .slice(0, MAX_SUGGESTED_USERS); // Giới hạn tối đa 50 người
+
   const displayedUsers = showAll
-    ? suggestedUsers
-    : (suggestedUsers || []).slice(0, SUGGESTED_LIMIT);
+    ? filteredSuggested
+    : filteredSuggested.slice(0, SUGGESTED_LIMIT);
 
   const handleFollow = async (sugUser) => {
     try {

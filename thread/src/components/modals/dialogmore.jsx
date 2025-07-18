@@ -7,6 +7,7 @@ import Brightness4Icon from '@mui/icons-material/Brightness4';
 import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
 import SwitchAccountIcon from '@mui/icons-material/SwitchAccount';
 import LogoutIcon from '@mui/icons-material/Logout';
+import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setAuthUser } from '../../redux/authSlice';
