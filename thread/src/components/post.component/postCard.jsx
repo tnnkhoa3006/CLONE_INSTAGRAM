@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import EmojiPicker from "emoji-picker-react";
 import EmojiEmotionsIcon from "@mui/icons-material/EmojiEmotions";
 import FavoriteBorderRoundedIcon from "@mui/icons-material/FavoriteBorderRounded";
@@ -8,6 +8,8 @@ import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
 import TurnedInNotIcon from "@mui/icons-material/TurnedInNot";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import VolumeOffIcon from '@mui/icons-material/VolumeOff';
+import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import Dialogmore_option from "../modals/dialogmore_option";
 import Dialogcomment from "../modals/dialogcomment";
 import { useDispatch, useSelector } from "react-redux";
@@ -26,6 +28,9 @@ const PostCard = ({ postId }) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [showComment, setShowComment] = useState(false);
+  const [muted, setMuted] = useState(true);
+  const containerRef = useRef(null);
+  const videoRef = useRef(null);
   const dispatch = useDispatch();
 
   // Lấy post từ Redux store
@@ -108,6 +113,40 @@ const PostCard = ({ postId }) => {
     }
   };
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const video = entry.target.querySelector("video");
+
+          if (!video) return;
+
+          if (entry.isIntersecting) {
+            // Pause tất cả video khác
+            document.querySelectorAll("video").forEach((v) => {
+              if (v !== video) v.pause();
+            });
+
+            video.play().catch((e) => console.log("Video play error:", e));
+          } else {
+            video.pause();
+          }
+        });
+      },
+      {
+        threshold: 0.7, // 70% xuất hiện mới play
+      }
+    );
+
+    const current = containerRef.current;
+    if (current) observer.observe(current);
+
+    return () => {
+      if (current) observer.unobserve(current);
+    };
+  }, []);
+
+
   // Nếu không có post, return null
   if (!post) return null;
 
@@ -142,17 +181,29 @@ const PostCard = ({ postId }) => {
 
         {/* Image */}
         <div className="w-full pl-4 md:pl-[80px]">
-          <div className="w-full md:border md:border-zinc-800">
+          <div
+            ref={containerRef}
+            className="relative w-full aspect-square border border-zinc-900 overflow-hidden rounded bg-black"
+          >
             {post.mediaType === "video" ? (
-              <video
-                className="w-full object-cover rounded"
-                src={post.mediaUrl}
-                controls
-                style={{ maxHeight: 500 }}
-              />
+              <div className="relative w-full h-full">
+                <video
+                  ref={videoRef}
+                  className="w-full h-full"
+                  src={post.mediaUrl}
+                  muted={muted}
+                  loop
+                />
+                <button
+                  onClick={() => setMuted((prev) => !prev)}
+                  className="absolute bottom-2 right-2 z-10 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition"
+                >
+                  {muted ? <VolumeOffIcon fontSize="small" /> : <VolumeUpIcon fontSize="small" />}
+                </button>
+              </div>
             ) : (
               <img
-                className="w-full object-cover rounded"
+                className="w-full h-full object-cover"
                 src={post.mediaUrl}
                 alt="post"
               />

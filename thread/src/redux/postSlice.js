@@ -9,7 +9,7 @@ const postSlice = createSlice({
     reducers: {
         setPosts: (state, action) => {
             state.posts = action.payload;
-            state.loading = true;
+            state.loading = false;
         },
         setPostLoading: (state, action) => {
             state.loading = action.payload;

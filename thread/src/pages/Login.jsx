@@ -1,32 +1,39 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Thumbnail from '../assets/thumbnails.png';
 import Instagramlogo from '../assets/instagramlogo.png';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import api from '../services/axios';
 import toast from 'react-hot-toast';
-import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setAuthUser } from '../redux/authSlice.js';
 
 const Login = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const { user } = useSelector((store) => store.auth);
+
   const [inputText, setInputText] = useState({
     email: '',
     password: '',
   });
-  const { user } = useSelector((store) => store.auth);
+
   const [loading, setLoading] = useState(false);
-  const dispatch = useDispatch();
 
   const handleInput = (e) => {
     setInputText({ ...inputText, [e.target.name]: e.target.value });
   };
 
   const handleLogin = async (e) => {
+    e.preventDefault();
+    if (!inputText.email || !inputText.password) {
+      toast.error("Please fill in both fields.");
+      return;
+    }
+
+    setLoading(true);
     try {
-      setLoading(true);
-      e.preventDefault();
       const res = await api.post('/user/login', inputText, {
         headers: {
           'Content-Type': 'application/json',
@@ -39,9 +46,11 @@ const Login = () => {
         toast.success(res.data.message);
         setInputText({ email: '', password: '' });
         navigate('/');
+      } else {
+        toast.error(res.data.message || "Login failed");
       }
     } catch (error) {
-      const message = error.response.data.message;
+      const message = error?.response?.data?.message || "An unexpected error occurred";
       toast.error(message);
     } finally {
       setLoading(false);
@@ -58,7 +67,7 @@ const Login = () => {
     <section className="w-screen min-h-screen bg-black flex flex-col">
       <div className="flex-grow flex items-center justify-center p-4">
         <article className="flex flex-col md:flex-row max-w-4xl w-full mx-auto items-center justify-center">
-          {/* Thumbnail - Hidden on mobile, shown on larger screens */}
+          {/* Thumbnail */}
           <div className="hidden md:flex md:w-1/2 justify-center">
             <img
               className="w-full max-w-[450px] h-auto"
@@ -66,6 +75,7 @@ const Login = () => {
               alt="thumbnails"
             />
           </div>
+
           {/* Login Form */}
           <div className="w-full md:w-1/2 flex flex-col items-center px-4">
             <div className="w-full max-w-[350px] flex flex-col items-center">
@@ -77,6 +87,7 @@ const Login = () => {
                   className="w-full cursor-pointer"
                 />
               </div>
+
               <form onSubmit={handleLogin} className="w-full space-y-4">
                 <div className="w-full flex justify-center">
                   <input
@@ -128,6 +139,7 @@ const Login = () => {
                   </span>
                 </div>
               </form>
+
               <div className="w-full flex justify-center pt-6 text-sm">
                 <span className="text-gray-300">Don't have an account?</span>
                 <span

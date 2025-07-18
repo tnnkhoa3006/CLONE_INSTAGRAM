@@ -307,7 +307,7 @@ const LeftSide = () => {
         </div>
       </div>
       {/* Mobile Bottom Navigation */}
-      <div className="md:hidden fixed px-auto left-0 bottom-0 w-full h-16 bg-gray-900 border-t border-zinc-700 z-50 flex justify-around items-center">
+      <div className="md:hidden fixed px-auto left-0 bottom-0 w-full h-16 bg-black border-t border-zinc-700 z-50 flex justify-around items-center">
         <div
           className="flex items-center justify-center p-2 hover:bg-zinc-800 rounded-md"
           onClick={() => navigate('/')}

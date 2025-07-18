@@ -46,18 +46,15 @@ function AppContent() {
 
   useEffect(() => {
     if (postLoading) {
-      // When postLoading becomes true, set a 2-second timeout to hide Splashpage
-      const timer = setTimeout(() => {
-        setShowSplash(false);
-      }, 2000);
-
-      // Cleanup the timer if the component unmounts or postLoading changes
-      return () => clearTimeout(timer);
+      setShowSplash(true); // Hiện splash khi loading
     } else {
-      // When postLoading is false, keep showing Splashpage
-      setShowSplash(true);
+      const timer = setTimeout(() => {
+        setShowSplash(false); // Ẩn splash sau 2s khi load xong
+      }, 2000);
+      return () => clearTimeout(timer);
     }
   }, [postLoading]);
+
 
   // Check if the current route is /login or /register
   const isAuthRoute = location.pathname === '/login' || location.pathname === '/register';

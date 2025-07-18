@@ -14,31 +14,36 @@ export const register = async (req, res) => {
     const { username, email, password } = req.body;
 
     if (!username || !email || !password) {
-      return res.status(401).json({
-        message: "Something is missing, please check!",
-        success: false
-      })     
-    };
+      return res.status(400).json({
+        message: "Missing username, email, or password.",
+        success: false,
+      });
+    }
 
-    const user = await User.findOne({ email });
-    if (user) {
-      return res.status(401).json({
-        message: "User already exists",
-        success: false
-      })
-    };
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        message: "User with this email already exists.",
+        success: false,
+      });
+    }
 
-    const hassedPassword = await bcrypt.hash(password, 10);
-    await User.create({ username, email, password: hassedPassword });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await User.create({ username, email, password: hashedPassword });
 
-    return res.status(200).json({
+    return res.status(201).json({
       message: "Account created successfully.",
-      success: true
-    })
+      success: true,
+    });
   } catch (error) {
-    console.log(error);
+    console.error("Registration error:", error);
+    return res.status(500).json({
+      message: "Server error during registration.",
+      success: false,
+    });
   }
 };
+
 
 export const login = async (req, res) => {
   try {
@@ -56,7 +61,7 @@ export const login = async (req, res) => {
 
     if (!user) {
       return res.status(401).json({
-        message: "User does not exist",
+        message: "User or email does not exist",
         success: false
       })
     };
