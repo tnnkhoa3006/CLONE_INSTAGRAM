@@ -7,13 +7,13 @@ import api from '../services/axios';
 import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import { setAuthUser } from '../redux/authSlice.js';
+import ModalForgotPassword from '../components/modals/ModalForgotPassword.jsx';
 
 const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
   const { user } = useSelector((store) => store.auth);
-
+  const [showForgotModal, setShowForgotModal] = useState(false);
   const [inputText, setInputText] = useState({
     email: '',
     password: '',
@@ -134,7 +134,10 @@ const Login = () => {
                   </div>
                 </div>
                 <div className="w-full flex justify-center">
-                  <span className="text-gray-300 text-sm cursor-pointer hover:underline">
+                  <span
+                    onClick={() => setShowForgotModal(true)}
+                    className="text-gray-300 text-sm cursor-pointer hover:underline"
+                  >
                     Forgot password?
                   </span>
                 </div>
@@ -156,6 +159,10 @@ const Login = () => {
       <footer className="text-gray-400 text-sm flex justify-center items-center py-4 border-t border-gray-700">
         © 2025 Instagram Clone
       </footer>
+      <ModalForgotPassword
+        isOpen={showForgotModal}
+        onClose={() => setShowForgotModal(false)}
+      />
     </section>
   );
 };

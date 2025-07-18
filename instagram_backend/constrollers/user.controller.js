@@ -5,7 +5,8 @@ import dotenv from "dotenv";
 import getDataUri from "../utils/datauri.js";
 import cloudinary from "../config/cloudinary.js";
 import Post from "../models/post.model.js";
-
+import crypto from 'crypto';
+import nodemailer from 'nodemailer';
 
 dotenv.config();
 
@@ -323,3 +324,74 @@ export const changePassword = async (req, res) => {
     });
   }
 };
+
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found", success: false });
+  }
+
+  const token = crypto.randomBytes(32).toString("hex");
+  const expire = Date.now() + 15 * 60 * 1000;
+
+  user.resetPasswordToken = token;
+  user.resetPasswordExpires = expire;
+  await user.save();
+
+  const resetURL = `${process.env.URL_FRONTEND}/resetpassword/${token}`;
+
+  // Gửi email
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    }
+  });
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Reset your password",
+    html: `<p>Click <a href="${resetURL}">here</a> to reset password. Expires in 15 minutes.</p>`
+  });
+
+  return res.status(200).json({ message: "Reset link sent to your email", success: true });
+};
+
+export const resetPassword = async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  if (!password) {
+    return res.status(400).json({ success: false, message: "Password is required" });
+  }
+
+  try {
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: "Invalid or expired token" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10); // <-- dòng gây lỗi nếu password undefined
+
+    user.password = hashedPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
+    await user.save();
+
+    res.status(200).json({ success: true, message: "Password has been reset successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+

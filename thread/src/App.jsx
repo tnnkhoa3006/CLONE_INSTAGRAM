@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
 import Splashpage from './pages/Splashpage';
+import ResetPassword from './pages/ResetPassword';
 import './App.css';
 import { Toaster } from 'react-hot-toast';
 import MainLayout from './pages/mainLayout';
@@ -69,6 +70,7 @@ function AppContent() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/resetpassword/:token" element={<ResetPassword />} />
             <Route element={<ProtectRoutes><MainLayout /></ProtectRoutes>}>
               <Route path="/" element={<Home />} />
               <Route path="/profile/:id" element={<Profile />} />
