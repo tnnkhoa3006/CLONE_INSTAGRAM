@@ -8,19 +8,19 @@ import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
 import TurnedInNotIcon from "@mui/icons-material/TurnedInNot";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
-import Dialogmore_option from "../modals/dialogmore_option";
 import CloseIcon from "@mui/icons-material/Close";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import Dialogmore_option from "../modals/dialogmore_option";
 import CommentBox from "../post.component/commentBox";
 import { useDispatch, useSelector } from "react-redux";
 import api from "../../services/axios";
 import { toast } from "react-hot-toast";
 import { setPosts, setSelectedPost } from "../../redux/postSlice";
-import ReplyThread from "../post.component/ReplyThread";
 
 const Dialogcomment = ({ isopen, onClose }) => {
     const { selectedPost, posts } = useSelector((store) => store.post);
-    const [showOptions, setShowOptions] = useState(false);
     const { user } = useSelector((store) => store.auth);
+    const [showOptions, setShowOptions] = useState(false);
     const [replyTo, setReplyTo] = useState("");
     const [replyParentId, setReplyParentId] = useState(null);
     const [text, setText] = useState("");
@@ -30,11 +30,8 @@ const Dialogcomment = ({ isopen, onClose }) => {
     const dispatch = useDispatch();
     const [comment, setComment] = useState([]);
 
-    // Tính toán liked và postLikes từ post hiện tại
     const liked = selectedPost?.likes?.includes(user?._id) || false;
     const postLikes = selectedPost?.likes?.length || 0;
-
-    // Lấy post từ Redux store thay vì từ prop
     const post = posts.find((p) => p && p._id === selectedPost?._id);
 
     useEffect(() => {
@@ -48,12 +45,12 @@ const Dialogcomment = ({ isopen, onClose }) => {
 
     const handleEmojiClick = (emojiData) => {
         setText((prev) => prev + emojiData.emoji);
+        inputRef.current?.focus();
     };
 
-    // Khi nhấn Reply ở comment con
     const handleReply = (username, parentId) => {
         setReplyTo(username);
-        setReplyParentId(parentId); // Lưu lại _id của comment cha
+        setReplyParentId(parentId);
         setText((prev) => (prev.startsWith(`@${username} `) ? prev : `@${username} `));
         setTimeout(() => inputRef.current?.focus(), 100);
     };
@@ -83,7 +80,8 @@ const Dialogcomment = ({ isopen, onClose }) => {
                 toast.success(res.data.message);
                 setText("");
                 setReplyTo("");
-                setReplyParentId(null); // Reset sau khi gửi
+                setReplyParentId(null);
+                setShowEmojiPicker(false);
             }
         } catch (error) {
             console.log(error);
@@ -137,10 +135,6 @@ const Dialogcomment = ({ isopen, onClose }) => {
         }
     };
 
-    // Tách comment gốc và reply
-    const rootComments = comment.filter((cmt) => !cmt.parentId);
-    const replies = comment.filter((cmt) => cmt.parentId);
-
     const renderReplies = (allComments, parentId, level = 1) => {
         const replies = allComments.filter((cmt) => cmt.parentId === parentId);
         if (replies.length === 0) return null;
@@ -177,12 +171,10 @@ const Dialogcomment = ({ isopen, onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex justify-center items-center">
-            <article className="flex flex-col md:flex-row text-white bg-zinc-900 rounded-lg overflow-hidden shadow-lg">
-                {/* Image section */}
-                <div
-                    className="flex-shrink-0 bg-black flex items-center justify-center w-[300px] h-[300px] md:w-[500px] md:h-[600px]"
-                >
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-80 flex items-center justify-center safe-area-padding">
+            <article className="flex flex-col w-full h-full max-w-[500px] md:max-w-4xl bg-zinc-900 rounded-lg md:rounded-2xl overflow-hidden shadow-lg">
+                {/* Image/Video Section (Hidden on Mobile, Shown on Desktop) */}
+                <div className="hidden md:flex flex-shrink-0 bg-black items-center justify-center w-full md:w-[500px] h-[200px] md:h-full">
                     {selectedPost?.mediaType === "video" ? (
                         <video
                             src={selectedPost?.mediaUrl}
@@ -199,142 +191,150 @@ const Dialogcomment = ({ isopen, onClose }) => {
                         />
                     )}
                 </div>
-                {/* Content section */}
-                <div
-                    className="flex flex-col bg-zinc-800 w-[300px] h-[300px] md:w-[500px] md:h-[600px]"
-                >
+                {/* Content Section */}
+                <div className="flex flex-col w-full h-full">
                     {/* Header */}
-                    <div className="flex items-center px-2 md:px-4 py-2 md:py-3 border-b border-zinc-700">
+                    <div className="flex items-center px-3 py-2 border-b border-zinc-700 bg-zinc-900 z-10">
+                        <button onClick={onClose} className="md:hidden mr-2 p-1">
+                            <ArrowBackIcon style={{ fontSize: 20 }} className="text-white" />
+                        </button>
                         <img
-                            className="w-8 md:w-10 h-8 md:h-10 object-cover rounded-full border-2 border-r-pink-500 border-b-purple-400 border-l-yellow-400 border-t-orange-400 cursor-pointer"
+                            className="w-8 h-8 object-cover rounded-full border-2 border-r-pink-500 border-b-purple-400 border-l-yellow-400 border-t-orange-400 cursor-pointer"
                             src={selectedPost?.author.ProfilePicture}
                             alt="avatar"
                             onError={(e) => (e.target.src = "/default-avatar.png")}
                         />
-                        <span className="ml-2 md:ml-3 text-sm md:text-base font-semibold">
-                            {selectedPost?.author.username}
-                        </span>
+                        <span className="ml-2 text-sm font-semibold">{selectedPost?.author.username}</span>
                         <MoreHorizIcon
                             onClick={() => setShowOptions(true)}
                             titleAccess="More options"
                             className="ml-auto cursor-pointer"
-                            style={{ fontSize: 18, md: { fontSize: 22 } }}
+                            style={{ fontSize: 18 }}
                         />
                     </div>
                     {/* Body: Caption + Comments */}
-                    <div className="flex-1 overflow-y-auto hide-scrollbar px-2 md:px-4 py-2 md:py-3 space-y-2 md:space-y-4">
+                    <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
                         {/* Caption */}
-                        <div className="flex items-start gap-2 md:gap-3">
+                        <div className="flex items-start gap-2">
                             <img
-                                className="w-8 md:w-10 h-8 md:h-10 object-cover rounded-full border-2 border-r-pink-500 border-b-purple-400 border-l-yellow-400 border-t-orange-400 cursor-pointer"
+                                className="w-8 h-8 object-cover rounded-full border-2 border-r-pink-500 border-b-purple-400 border-l-yellow-400 border-t-orange-400 cursor-pointer"
                                 src={selectedPost?.author.ProfilePicture}
                                 alt="avatar"
                                 onError={(e) => (e.target.src = "/default-avatar.png")}
                             />
-                            <div className="text-sm md:text-base">
+                            <div className="text-sm">
                                 <span className="font-semibold cursor-pointer">{selectedPost?.author.username}</span>{" "}
                                 <span className="font-normal">{selectedPost?.caption}</span>
                             </div>
                         </div>
                         {/* Comments */}
-                        <div className="space-y-1 md:space-y-2">
-                            {rootComments.map((cmt) => (
-                                <div key={cmt._id}>
-                                    <CommentBox comment={cmt} onReply={handleReply} user={user} />
-                                    <ReplyThread allComments={comment} parentId={cmt._id} onReply={handleReply} user={user} />
-                                </div>
-                            ))}
+                        <div className="space-y-2">
+                            {comment
+                                .filter((cmt) => !cmt.parentId)
+                                .map((cmt) => (
+                                    <div key={cmt._id}>
+                                        <CommentBox comment={cmt} onReply={handleReply} user={user} />
+                                        {renderReplies(comment, cmt._id)}
+                                    </div>
+                                ))}
                         </div>
                     </div>
-                    {/* Footer: Actions + Add comment */}
-                    <div className="px-2 md:px-4 py-2 md:py-3 border-t border-zinc-700">
+                    {/* Footer: Actions + Add Comment */}
+                    <div className="sticky bottom-0 px-3 py-2 border-t border-zinc-700 bg-zinc-900 z-10 safe-area-padding">
                         {/* Actions */}
-                        <div className="flex items-center space-x-2 md:space-x-4 mb-1 md:mb-2">
+                        <div className="flex items-center space-x-3 mb-2">
                             {liked ? (
                                 <FavoriteRoundedIcon
                                     titleAccess="Like"
                                     onClick={likeOrDislikeHandler}
-                                    style={{ fontSize: 20, md: { fontSize: 27 }, cursor: "pointer", color: "red" }}
+                                    className="cursor-pointer text-red-500"
+                                    style={{ fontSize: 20 }}
                                 />
                             ) : (
                                 <FavoriteBorderRoundedIcon
                                     titleAccess="Like"
                                     onClick={likeOrDislikeHandler}
-                                    className="hover:text-gray-400"
-                                    style={{ fontSize: 20, md: { fontSize: 27 }, cursor: "pointer" }}
+                                    className="cursor-pointer hover:text-gray-400"
+                                    style={{ fontSize: 20 }}
                                 />
                             )}
                             <ModeCommentOutlinedIcon
                                 titleAccess="Comment"
-                                className="hover:text-gray-400"
-                                style={{ fontSize: 20, md: { fontSize: 27 }, cursor: "pointer" }}
+                                className="cursor-pointer hover:text-gray-400"
+                                style={{ fontSize: 20 }}
                             />
                             <ShareOutlinedIcon
                                 titleAccess="Share"
-                                className="hover:text-gray-400"
-                                style={{ fontSize: 20, md: { fontSize: 27 }, cursor: "pointer" }}
+                                className="cursor-pointer hover:text-gray-400"
+                                style={{ fontSize: 20 }}
                             />
                             {saved ? (
                                 <BookmarkIcon
                                     titleAccess="Save"
                                     onClick={bookMarkHandler}
-                                    style={{ fontSize: 20, md: { fontSize: 27 }, cursor: "pointer", color: "white", marginLeft: "auto" }}
+                                    className="cursor-pointer"
+                                    style={{ fontSize: 20, marginLeft: "auto" }}
                                 />
                             ) : (
                                 <TurnedInNotIcon
                                     titleAccess="Save"
                                     onClick={bookMarkHandler}
-                                    className="hover:text-gray-400"
-                                    style={{ fontSize: 20, md: { fontSize: 27 }, cursor: "pointer", marginLeft: "auto" }}
+                                    className="cursor-pointer hover:text-gray-400"
+                                    style={{ fontSize: 20, marginLeft: "auto" }}
                                 />
                             )}
                         </div>
                         {/* Likes */}
-                        <div className="text-sm md:text-base font-semibold mb-1 md:mb-1">{postLikes} likes</div>
-                        {/* Add comment */}
-                        <div className="flex items-center gap-1 md:gap-2">
+                        <div className="text-sm font-semibold mb-2">{postLikes} likes</div>
+                        {/* Add Comment */}
+                        <div className="flex items-center gap-2">
                             <textarea
                                 ref={inputRef}
-                                className="flex-1 bg-zinc-800 text-white outline-none resize-none hide-scrollbar rounded-md px-1 md:px-2 py-1 md:py-1 text-sm md:text-base"
+                                className="flex-1 bg-zinc-800 text-white outline-none resize-none rounded-md px-2 py-1 text-sm"
                                 placeholder="Add a comment..."
                                 value={text}
                                 onChange={(e) => setText(e.target.value)}
                                 rows={1}
+                                onFocus={() => setShowEmojiPicker(false)}
                             />
                             {text.trim().length > 0 && (
-                                <button onClick={commentHandler} className="text-sm md:text-base font-semibold text-blue-500">
+                                <button onClick={commentHandler} className="text-sm font-semibold text-blue-500">
                                     Post
                                 </button>
                             )}
-                            <div className="relative">
-                                <button
-                                    onClick={() => setShowEmojiPicker((prev) => !prev)}
-                                    className="text-sm md:text-base font-semibold"
-                                >
-                                    <EmojiEmotionsIcon
-                                        titleAccess="Emoji"
-                                        className="hover:text-gray-400"
-                                        style={{ fontSize: 16, md: { fontSize: 20 }, cursor: "pointer" }}
-                                    />
-                                </button>
-                            </div>
+                            <button
+                                onClick={() => setShowEmojiPicker((prev) => !prev)}
+                                className="p-1"
+                            >
+                                <EmojiEmotionsIcon
+                                    titleAccess="Emoji"
+                                    className="cursor-pointer hover:text-gray-400"
+                                    style={{ fontSize: 18 }}
+                                />
+                            </button>
                         </div>
                     </div>
                 </div>
+                {/* Close Button */}
+                <button
+                    onClick={onClose}
+                    className="absolute top-2 right-2 text-zinc-300 hover:text-white safe-area-padding"
+                >
+                    <CloseIcon style={{ fontSize: 24 }} />
+                </button>
+                {showEmojiPicker && (
+                    <div className="absolute bottom-20 left-3 right-3 z-50 shadow-lg">
+                        <EmojiPicker
+                            onEmojiClick={handleEmojiClick}
+                            theme="dark"
+                            height={300}
+                            width="100%"
+                            previewConfig={{ showPreview: false }}
+                        />
+                    </div>
+                )}
+                <Dialogmore_option isOpen={showOptions} onClose={() => setShowOptions(false)} />
             </article>
-            {/* Close button */}
-            <button
-                onClick={onClose}
-                className="absolute top-2 md:top-4 right-2 md:right-8 text-zinc-300 hover:text-white"
-            >
-                <CloseIcon style={{ fontSize: 24, md: { fontSize: 32 } }} />
-            </button>
-            {showEmojiPicker && (
-                <div className="absolute top-8 md:top-10 right-0 z-50 shadow-lg">
-                    <EmojiPicker onEmojiClick={handleEmojiClick} theme="dark" height={300} />
-                </div>
-            )}
-            <Dialogmore_option isOpen={showOptions} onClose={() => setShowOptions(false)} />
         </div>
     );
 };
