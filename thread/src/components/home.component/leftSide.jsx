@@ -321,6 +321,7 @@ const LeftSide = () => {
           )}
         </div>
         <div
+          onClick={() => navigate('/reels')}
           className="flex items-center justify-center p-2 hover:bg-zinc-800 rounded-md relative"
         >
           <SlideshowOutlinedIcon style={{ fontSize: 28, color: '#fff' }} />
