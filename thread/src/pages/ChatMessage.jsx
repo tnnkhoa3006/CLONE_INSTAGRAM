@@ -68,7 +68,19 @@ const ChatMessage = () => {
     const followers = normalize(user?.followers || []);
     const suggested = suggestedUsers || [];
 
-    const allUsers = [
+    // Trả về timestamp của tin nhắn gần nhất với userId
+    const getLastMessageTime = (userId) => {
+        const relatedMessages = messages.filter(
+            (msg) =>
+                msg.senderId === userId ||
+                msg.receiverId === userId
+        );
+        if (relatedMessages.length === 0) return 0;
+        // Giả sử message có trường createdAt là ISO string hoặc timestamp
+        return Math.max(...relatedMessages.map((msg) => new Date(msg.createdAt).getTime()));
+    };
+
+    let allUsers = [
         ...following,
         ...followers,
     ]
@@ -82,6 +94,9 @@ const ChatMessage = () => {
                 u._id &&
                 index === self.findIndex((x) => x._id === u._id)
         );
+
+    // Sắp xếp user có tin nhắn mới nhất lên đầu
+    allUsers = allUsers.sort((a, b) => getLastMessageTime(b._id) - getLastMessageTime(a._id));
 
     const handleBack = () => {
         dispatch(setSelectedUser(null));

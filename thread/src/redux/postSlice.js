@@ -16,9 +16,22 @@ const postSlice = createSlice({
         },
         setSelectedPost: (state, action) => {
             state.selectedPost = action.payload;
+        },
+        optimisticLike: (state, action) => {
+            const { postId, userId } = action.payload;
+            state.posts = state.posts.map(post =>
+                post._id === postId
+                    ? {
+                        ...post,
+                        likes: post.likes.includes(userId)
+                            ? post.likes.filter(id => id !== userId)
+                            : [...post.likes, userId],
+                    }
+                    : post
+            );
         }
     }
 });
 
-export const {setPosts, setSelectedPost, setPostLoading} = postSlice.actions;
+export const {setPosts, setSelectedPost, setPostLoading, optimisticLike} = postSlice.actions;
 export default postSlice.reducer

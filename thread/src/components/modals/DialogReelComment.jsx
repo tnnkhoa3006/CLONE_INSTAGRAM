@@ -84,8 +84,10 @@ const DialogReelComment = ({ isOpen, onClose, post }) => {
         }
     }, [post?.caption]);
 
-    const liked = post?.likes?.includes(user?._id) || false;
-    const postLikes = post?.likes?.length || 0;
+    const currentPost = posts.find((p) => p._id === post._id) || post;
+
+    const liked = currentPost.likes.includes(user._id);
+    const postLikes = currentPost.likes.length;
 
     useEffect(() => {
         if (post && user) {
@@ -127,7 +129,6 @@ const DialogReelComment = ({ isOpen, onClose, post }) => {
                 dispatch(setPosts(updatePostData));
                 const updatedSelectedPost = { ...post, comments: updateCommentData };
                 dispatch(setSelectedPost(updatedSelectedPost));
-                toast.success(res.data.message);
                 setText("");
                 setReplyTo("");
                 setReplyParentId(null);
@@ -139,25 +140,51 @@ const DialogReelComment = ({ isOpen, onClose, post }) => {
     };
 
     const likeOrDislikeHandler = async () => {
+        // Lấy lại post mới nhất từ Redux (tránh dùng biến cũ)
+        const currentPost = posts.find((p) => p._id === post._id) || post;
+        const currentlyLiked = currentPost.likes.includes(user._id);
+
+        // Optimistic update
+        const updatedLikes = currentlyLiked
+            ? currentPost.likes.filter((id) => id !== user._id)
+            : [...currentPost.likes, user._id];
+
+        // Cập nhật UI ngay
+        const updatedSelectedPost = { ...currentPost, likes: updatedLikes };
+        dispatch(setSelectedPost(updatedSelectedPost));
+        const updatedPostData = posts.map((p) =>
+            p._id === post._id ? { ...p, likes: updatedLikes } : p
+        );
+        dispatch(setPosts(updatedPostData));
+
         try {
-            const action = liked ? "dislike" : "like";
+            const action = currentlyLiked ? "dislike" : "like";
             const res = await api.post(`/post/${post._id}/${action}`, {}, { withCredentials: true });
-            if (res.data.success) {
-                const updatedPostData = posts.map((p) =>
-                    p._id === post._id
-                        ? { ...p, likes: liked ? p.likes.filter((id) => id !== user._id) : [...p.likes, user._id] }
-                        : p
+            if (!res.data.success) {
+                toast.error(res.data.message);
+                // Rollback nếu API báo lỗi
+                const rollbackLikes = currentlyLiked
+                    ? [...currentPost.likes, user._id]
+                    : currentPost.likes.filter((id) => id !== user._id);
+                const rollbackSelectedPost = { ...currentPost, likes: rollbackLikes };
+                dispatch(setSelectedPost(rollbackSelectedPost));
+                const rollbackPostData = posts.map((p) =>
+                    p._id === post._id ? { ...p, likes: rollbackLikes } : p
                 );
-                dispatch(setPosts(updatedPostData));
-                const updatedSelectedPost = {
-                    ...post,
-                    likes: liked ? post.likes.filter((id) => id !== user._id) : [...post.likes, user._id],
-                };
-                dispatch(setSelectedPost(updatedSelectedPost));
-                toast.success(res.data.message);
+                dispatch(setPosts(rollbackPostData));
             }
         } catch (error) {
-            toast.error(error?.response?.data?.message || "Có lỗi xảy ra");
+            toast.error(error?.response?.data?.message || "Có lỗi xảy ra khi like!");
+            // Rollback nếu lỗi mạng
+            const rollbackLikes = currentlyLiked
+                ? [...currentPost.likes, user._id]
+                : currentPost.likes.filter((id) => id !== user._id);
+            const rollbackSelectedPost = { ...currentPost, likes: rollbackLikes };
+            dispatch(setSelectedPost(rollbackSelectedPost));
+            const rollbackPostData = posts.map((p) =>
+                p._id === post._id ? { ...p, likes: rollbackLikes } : p
+            );
+            dispatch(setPosts(rollbackPostData));
         }
     };
 
@@ -188,11 +215,11 @@ const DialogReelComment = ({ isOpen, onClose, post }) => {
                         </button>
                         <img
                             className="w-10 h-10 object-cover rounded-full border-2 border-r-pink-500 border-b-purple-400 border-l-yellow-400 border-t-orange-400 cursor-pointer"
-                            src={post?.author.ProfilePicture}
+                            src={currentPost.author.ProfilePicture}
                             alt="avatar"
                             onError={(e) => (e.target.src = "/default-avatar.png")}
                         />
-                        <span className="ml-2 text-sm font-semibold">{post?.author.username}</span>
+                        <span className="ml-2 text-sm font-semibold">{currentPost.author.username}</span>
                         <MoreHorizIcon
                             onClick={() => setShowOptions(true)}
                             titleAccess="More options"
@@ -205,12 +232,12 @@ const DialogReelComment = ({ isOpen, onClose, post }) => {
                         <div className="flex items-start gap-2">
                             <img
                                 className="w-10 h-10 object-cover rounded-full border-2 border-r-pink-500 border-b-purple-400 border-l-yellow-400 border-t-orange-400 cursor-pointer"
-                                src={post?.author.ProfilePicture}
+                                src={currentPost.author.ProfilePicture}
                                 alt="avatar"
                                 onError={(e) => (e.target.src = "/default-avatar.png")}
                             />
                             <div className="text-sm">
-                                <span className="font-semibold cursor-pointer">{post?.author.username}</span>{" "}
+                                <span className="font-semibold cursor-pointer">{currentPost.author.username}</span>{" "}
                                 <span
                                     ref={captionRef}
                                     className="font-light"
@@ -225,7 +252,7 @@ const DialogReelComment = ({ isOpen, onClose, post }) => {
                                             }
                                     }
                                 >
-                                    {post?.caption}
+                                    {currentPost.caption}
                                 </span>
                                 {isLongCaption && (
                                     <button

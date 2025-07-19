@@ -88,7 +88,6 @@ const Dialogcomment = ({ isopen, onClose }) => {
                     comments: updateCommentData,
                 };
                 dispatch(setSelectedPost(updatedSelectedPost));
-                toast.success(res.data.message);
                 setText("");
                 setReplyTo("");
                 setReplyParentId(null);
@@ -101,31 +100,55 @@ const Dialogcomment = ({ isopen, onClose }) => {
     };
 
     const likeOrDislikeHandler = async () => {
+        // Optimistic update
+        const updatedLikes = liked
+            ? selectedPost.likes.filter((id) => id !== user._id)
+            : [...selectedPost.likes, user._id];
+
+        const updatedSelectedPost = {
+            ...selectedPost,
+            likes: updatedLikes,
+        };
+        dispatch(setSelectedPost(updatedSelectedPost));
+        const updatedPostData = posts.map((p) =>
+            p._id === selectedPost._id ? { ...p, likes: updatedLikes } : p
+        );
+        dispatch(setPosts(updatedPostData));
+
         try {
             const action = liked ? "dislike" : "like";
             const res = await api.post(`/post/${selectedPost._id}/${action}`, {}, { withCredentials: true });
-            if (res.data.success) {
-                const updatedPostData = posts.map((p) =>
-                    p._id === selectedPost._id
-                        ? {
-                            ...p,
-                            likes: liked ? p.likes.filter((id) => id !== user._id) : [...p.likes, user._id],
-                        }
-                        : p
-                );
-                dispatch(setPosts(updatedPostData));
-                const updatedSelectedPost = {
+            if (!res.data.success) {
+                toast.error(res.data.message);
+                // Rollback
+                const rollbackLikes = liked
+                    ? [...selectedPost.likes, user._id]
+                    : selectedPost.likes.filter((id) => id !== user._id);
+                const rollbackSelectedPost = {
                     ...selectedPost,
-                    likes: liked
-                        ? selectedPost.likes.filter((id) => id !== user._id)
-                        : [...selectedPost.likes, user._id],
+                    likes: rollbackLikes,
                 };
-                dispatch(setSelectedPost(updatedSelectedPost));
-                toast.success(res.data.message);
+                dispatch(setSelectedPost(rollbackSelectedPost));
+                const rollbackPostData = posts.map((p) =>
+                    p._id === selectedPost._id ? { ...p, likes: rollbackLikes } : p
+                );
+                dispatch(setPosts(rollbackPostData));
             }
         } catch (error) {
-            console.log(error);
-            toast.error(error.response.data.message);
+            toast.error(error?.response?.data?.message || "Có lỗi xảy ra khi like!");
+            // Rollback
+            const rollbackLikes = liked
+                ? [...selectedPost.likes, user._id]
+                : selectedPost.likes.filter((id) => id !== user._id);
+            const rollbackSelectedPost = {
+                ...selectedPost,
+                likes: rollbackLikes,
+            };
+            dispatch(setSelectedPost(rollbackSelectedPost));
+            const rollbackPostData = posts.map((p) =>
+                p._id === selectedPost._id ? { ...p, likes: rollbackLikes } : p
+            );
+            dispatch(setPosts(rollbackPostData));
         }
     };
 

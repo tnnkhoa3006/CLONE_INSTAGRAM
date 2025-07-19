@@ -13,7 +13,7 @@ import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import Dialogmore_option from "../modals/dialogmore_option";
 import Dialogcomment from "../modals/dialogcomment";
 import { useDispatch, useSelector } from "react-redux";
-import { setPosts, setSelectedPost } from "../../redux/postSlice.js";
+import { optimisticLike, setPosts, setSelectedPost } from "../../redux/postSlice.js";
 import api from "../../services/axios";
 import { toast } from "react-hot-toast";
 import { Link } from "react-router-dom";
@@ -55,25 +55,23 @@ const PostCard = ({ postId }) => {
     setText((prev) => prev + emojiData.emoji);
   };
 
-  const likeOrDislikeHandler = async () => {
+  const handleLike = async (post) => {
+    // 1. Optimistic update
+    dispatch(optimisticLike({ postId: post._id, userId: user._id }));
+
     try {
-      const action = liked ? "dislike" : "like";
+      // 2. Gọi API
+      const action = post.likes.includes(user._id) ? "dislike" : "like";
       const res = await api.post(`/post/${post._id}/${action}`, {}, { withCredentials: true });
-      if (res.data.success) {
-        const updatedPostData = posts.map((p) =>
-          p._id === post._id
-            ? {
-              ...p,
-              likes: liked ? p.likes.filter((id) => id !== user._id) : [...p.likes, user._id],
-            }
-            : p
-        );
-        dispatch(setPosts(updatedPostData));
-        toast.success(res.data.message);
+      if (!res.data.success) {
+        // Nếu API báo lỗi, rollback lại
+        dispatch(optimisticLike({ postId: post._id, userId: user._id }));
+        toast.error(res.data.message);
       }
     } catch (error) {
-      console.log(error);
-      toast.error(error.response.data.message);
+      // Nếu lỗi mạng, rollback lại
+      dispatch(optimisticLike({ postId: post._id, userId: user._id }));
+      toast.error("Có lỗi xảy ra khi like!");
     }
   };
 
@@ -98,7 +96,6 @@ const PostCard = ({ postId }) => {
           p._id === post._id ? { ...p, comments: updateCommentData } : p
         );
         dispatch(setPosts(updatePostData));
-        toast.success(res.data.message);
         setText("");
       }
     } catch (error) {
@@ -223,13 +220,13 @@ const PostCard = ({ postId }) => {
             {liked ? (
               <FavoriteRoundedIcon
                 titleAccess="Like"
-                onClick={likeOrDislikeHandler}
+                onClick={() => handleLike(post)}
                 style={{ fontSize: 27, cursor: "pointer", color: "red" }}
               />
             ) : (
               <FavoriteBorderRoundedIcon
                 titleAccess="Like"
-                onClick={likeOrDislikeHandler}
+                onClick={() => handleLike(post)}
                 style={{ fontSize: 27, cursor: "pointer" }}
               />
             )}

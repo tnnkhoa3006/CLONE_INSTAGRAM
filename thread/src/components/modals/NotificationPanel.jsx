@@ -1,5 +1,6 @@
 import React, { forwardRef } from "react";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { Link } from "react-router-dom";
 
 const NotificationPanel = forwardRef(({ likeNotifications, onClose }, ref) => (
   <div
@@ -28,15 +29,19 @@ const NotificationPanel = forwardRef(({ likeNotifications, onClose }, ref) => (
           key={idx}
           className="flex items-center px-4 py-3 hover:bg-zinc-800 transition"
         >
-          <img
-            src={notif.userDetails?.ProfilePicture}
-            alt="avatar"
-            className="w-10 h-10 rounded-full object-cover mr-3"
-          />
+          <Link to={`/profile/${notif.userDetails?._id}`}>
+            <img
+              src={notif.userDetails?.ProfilePicture}
+              alt="avatar"
+              className="w-10 h-10 rounded-full object-cover mr-3 cursor-pointer"
+            />
+          </Link>
           <div className="flex-1 text-sm">
-            <span className="font-semibold text-white">
-              {notif.userDetails?.username}
-            </span>
+            <Link to={`/profile/${notif.userDetails?._id}`}>
+              <span className="font-semibold text-white cursor-pointer">
+                {notif.userDetails?.username}
+              </span>
+            </Link>
             <span className="text-gray-300 ml-1">liked your post.</span>
           </div>
         </div>

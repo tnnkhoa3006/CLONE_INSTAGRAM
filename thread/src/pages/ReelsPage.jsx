@@ -93,28 +93,44 @@ const ReelsPage = () => {
   };
 
   const likeOrDislikeHandler = async (post) => {
+    // Optimistic update
     const liked = post.likes.includes(user._id);
+    const updatedLikes = liked
+        ? post.likes.filter((id) => id !== user._id)
+        : [...post.likes, user._id];
+
+    // Cập nhật UI ngay
+    const updatedPostData = posts.map((p) =>
+        p._id === post._id ? { ...p, likes: updatedLikes } : p
+    );
+    dispatch(setPosts(updatedPostData));
+
     try {
-      const action = liked ? "dislike" : "like";
-      const res = await api.post(`/post/${post._id}/${action}`, {}, { withCredentials: true });
-      if (res.data.success) {
-        const updatedPostData = posts.map((p) =>
-          p._id === post._id
-            ? {
-              ...p,
-              likes: liked
-                ? p.likes.filter((id) => id !== user._id)
-                : [...p.likes, user._id],
-            }
-            : p
-        );
-        dispatch(setPosts(updatedPostData));
-        toast.success(res.data.message);
-      }
+        const action = liked ? "dislike" : "like";
+        const res = await api.post(`/post/${post._id}/${action}`, {}, { withCredentials: true });
+        if (!res.data.success) {
+            toast.error(res.data.message);
+            // Rollback
+            const rollbackLikes = liked
+                ? [...post.likes, user._id]
+                : post.likes.filter((id) => id !== user._id);
+            const rollbackPostData = posts.map((p) =>
+                p._id === post._id ? { ...p, likes: rollbackLikes } : p
+            );
+            dispatch(setPosts(rollbackPostData));
+        }
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Có lỗi xảy ra");
+        toast.error(error?.response?.data?.message || "Có lỗi xảy ra khi like!");
+        // Rollback
+        const rollbackLikes = liked
+            ? [...post.likes, user._id]
+            : post.likes.filter((id) => id !== user._id);
+        const rollbackPostData = posts.map((p) =>
+            p._id === post._id ? { ...p, likes: rollbackLikes } : p
+        );
+        dispatch(setPosts(rollbackPostData));
     }
-  };
+};
 
   const bookMarkHandler = async (post) => {
     try {
@@ -201,7 +217,7 @@ const ReelsPage = () => {
                 />
 
                 {/* 🔇 MUTE/UNMUTE */}
-                <div className="absolute top-20 right-4 md:top-0 md:right-0 z-30 bg-black/50 rounded-full p-1">
+                <div className="absolute top-20 right-4 md:top-0 md:right-0 z-60 bg-black/50 rounded-full p-1">
                   <button onClick={() => toggleMute(idx)}>
                     {mutedStates[idx] ? (
                       <VolumeOffIcon className="text-white" />
