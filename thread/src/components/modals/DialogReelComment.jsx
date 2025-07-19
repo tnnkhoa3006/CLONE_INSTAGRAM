@@ -27,7 +27,7 @@ function RepliesThread({ allComments, parentId, level, onReply, user, openReplie
         <div style={{ marginLeft: level * 16 }}>
             {!isVisible ? (
                 <span
-                    className="text-blue-400 text-xs cursor-pointer hover:underline"
+                    className="text-gray-400 text-xs cursor-pointer hover:underline"
                     onClick={() => setOpenReplies((prev) => ({ ...prev, [parentId]: true }))}
                 >
                     View replies ({replies.length})
@@ -35,7 +35,7 @@ function RepliesThread({ allComments, parentId, level, onReply, user, openReplie
             ) : (
                 <>
                     <span
-                        className="text-blue-400 text-xs cursor-pointer hover:underline"
+                        className="text-gray-400 text-xs cursor-pointer hover:underline"
                         onClick={() => setOpenReplies((prev) => ({ ...prev, [parentId]: false }))}
                     >
                         Hide replies
@@ -73,10 +73,19 @@ const DialogReelComment = ({ isOpen, onClose, post }) => {
     const dispatch = useDispatch();
     const [comment, setComment] = useState([]);
     const [openReplies, setOpenReplies] = useState({});
+    const [showFullCaption, setShowFullCaption] = useState(false);
+    const [isLongCaption, setIsLongCaption] = useState(false);
+    const captionRef = useRef(null);
+
+    useEffect(() => {
+        // Kiểm tra caption có dài hơn 2 dòng không
+        if (captionRef.current) {
+            setIsLongCaption(captionRef.current.scrollHeight > captionRef.current.clientHeight);
+        }
+    }, [post?.caption]);
 
     const liked = post?.likes?.includes(user?._id) || false;
     const postLikes = post?.likes?.length || 0;
-    const currentPost = posts.find((p) => p && p._id === post?._id);
 
     useEffect(() => {
         if (post && user) {
@@ -169,16 +178,16 @@ const DialogReelComment = ({ isOpen, onClose, post }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-80 flex items-center justify-center safe-area-padding">
-            <article className="flex flex-col w-full h-full max-w-[500px] md:max-w-4xl bg-zinc-900 rounded-lg md:rounded-2xl overflow-hidden shadow-lg">
+        <div className="fixed inset-0 z-50 md:py-12 bg-black bg-opacity-80 flex items-center justify-center safe-area-padding">
+            <article className="flex flex-col w-full h-full max-w-[500px] md:max-w-xl bg-zinc-900 rounded-lg md:rounded-2xl overflow-hidden shadow-lg">
                 <div className="flex flex-col w-full h-full">
                     {/* Header */}
                     <div className="flex items-center px-3 py-2 border-b border-zinc-700 bg-zinc-900 z-10">
                         <button onClick={onClose} className="md:hidden mr-2 p-1">
-                            <ArrowBackIcon style={{ fontSize: 20 }} className="text-white" />
+                            <ArrowBackIcon style={{ fontSize: 28 }} className="text-white" />
                         </button>
                         <img
-                            className="w-8 h-8 object-cover rounded-full border-2 border-r-pink-500 border-b-purple-400 border-l-yellow-400 border-t-orange-400 cursor-pointer"
+                            className="w-10 h-10 object-cover rounded-full border-2 border-r-pink-500 border-b-purple-400 border-l-yellow-400 border-t-orange-400 cursor-pointer"
                             src={post?.author.ProfilePicture}
                             alt="avatar"
                             onError={(e) => (e.target.src = "/default-avatar.png")}
@@ -188,21 +197,44 @@ const DialogReelComment = ({ isOpen, onClose, post }) => {
                             onClick={() => setShowOptions(true)}
                             titleAccess="More options"
                             className="ml-auto cursor-pointer"
-                            style={{ fontSize: 18 }}
+                            style={{ fontSize: 28 }}
                         />
                     </div>
                     {/* Body: Caption + Comments */}
                     <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
                         <div className="flex items-start gap-2">
                             <img
-                                className="w-8 h-8 object-cover rounded-full border-2 border-r-pink-500 border-b-purple-400 border-l-yellow-400 border-t-orange-400 cursor-pointer"
+                                className="w-10 h-10 object-cover rounded-full border-2 border-r-pink-500 border-b-purple-400 border-l-yellow-400 border-t-orange-400 cursor-pointer"
                                 src={post?.author.ProfilePicture}
                                 alt="avatar"
                                 onError={(e) => (e.target.src = "/default-avatar.png")}
                             />
                             <div className="text-sm">
                                 <span className="font-semibold cursor-pointer">{post?.author.username}</span>{" "}
-                                <span className="font-normal">{post?.caption}</span>
+                                <span
+                                    ref={captionRef}
+                                    className="font-light"
+                                    style={
+                                        showFullCaption
+                                            ? {}
+                                            : {
+                                                display: "-webkit-box",
+                                                WebkitLineClamp: 1,
+                                                WebkitBoxOrient: "vertical",
+                                                overflow: "hidden",
+                                            }
+                                    }
+                                >
+                                    {post?.caption}
+                                </span>
+                                {isLongCaption && (
+                                    <button
+                                        className="text-gray-400 ml-2 text-xs font-semibold md:hover:underline"
+                                        onClick={() => setShowFullCaption((prev) => !prev)}
+                                    >
+                                        {showFullCaption ? "Ẩn bớt" : "Xem thêm"}
+                                    </button>
+                                )}
                             </div>
                         </div>
                         <div className="space-y-2">
@@ -225,46 +257,46 @@ const DialogReelComment = ({ isOpen, onClose, post }) => {
                         </div>
                     </div>
                     {/* Footer: Actions + Add Comment */}
-                    <div className="sticky bottom-0 px-3 py-2 border-t border-zinc-700 bg-zinc-900 z-10 safe-area-padding md:safe-area-padding-bottom">
+                    <div className="sticky bottom-0 px-3 py-8 border-t border-zinc-700 bg-zinc-900 z-10 safe-area-padding md:safe-area-padding-bottom">
                         <div className="flex items-center space-x-3 mb-2">
                             {liked ? (
                                 <FavoriteRoundedIcon
                                     titleAccess="Like"
                                     onClick={likeOrDislikeHandler}
                                     className="cursor-pointer text-red-500"
-                                    style={{ fontSize: 20 }}
+                                    style={{ fontSize: 28 }}
                                 />
                             ) : (
                                 <FavoriteBorderRoundedIcon
                                     titleAccess="Like"
                                     onClick={likeOrDislikeHandler}
                                     className="cursor-pointer hover:text-gray-400"
-                                    style={{ fontSize: 20 }}
+                                    style={{ fontSize: 28 }}
                                 />
                             )}
                             <ModeCommentOutlinedIcon
                                 titleAccess="Comment"
                                 className="cursor-pointer hover:text-gray-400"
-                                style={{ fontSize: 20 }}
+                                style={{ fontSize: 28 }}
                             />
                             <ShareOutlinedIcon
                                 titleAccess="Share"
                                 className="cursor-pointer hover:text-gray-400"
-                                style={{ fontSize: 20 }}
+                                style={{ fontSize: 28 }}
                             />
                             {saved ? (
                                 <BookmarkIcon
                                     titleAccess="Save"
                                     onClick={bookMarkHandler}
                                     className="cursor-pointer"
-                                    style={{ fontSize: 20, marginLeft: "auto" }}
+                                    style={{ fontSize: 28, marginLeft: "auto" }}
                                 />
                             ) : (
                                 <TurnedInNotIcon
                                     titleAccess="Save"
                                     onClick={bookMarkHandler}
                                     className="cursor-pointer hover:text-gray-400"
-                                    style={{ fontSize: 20, marginLeft: "auto" }}
+                                    style={{ fontSize: 28, marginLeft: "auto" }}
                                 />
                             )}
                         </div>

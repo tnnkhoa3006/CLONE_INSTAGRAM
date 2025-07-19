@@ -31,7 +31,7 @@ const CommentBox = ({ comment, onReply, user }) => {
     <div className="flex items-start py-1 md:py-2 group hover:bg-zinc-800 rounded-lg transition relative">
       {/* Avatar */}
       <img
-        className="w-8 h-8 md:w-[40px] md:h-[40px] object-cover rounded-full mt-0.5 md:mt-1 mr-2 md:mr-3 border border-zinc-700"
+        className="w-10 h-10 md:w-[40px] md:h-[40px] object-cover rounded-full mt-0.5 md:mt-1 mr-2 md:mr-3 border border-zinc-700"
         src={comment?.author?.ProfilePicture}
         alt="avatar"
         onError={(e) => (e.target.src = "/default-avatar.png")}
@@ -39,7 +39,7 @@ const CommentBox = ({ comment, onReply, user }) => {
       {/* Main content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center flex-wrap">
-          <span className="font-bold text-white text-xs md:text-sm cursor-pointer hover:underline mr-1 md:mr-2">
+          <span className="font-bold text-white text-sm md:text-sm cursor-pointer hover:underline mr-1 md:mr-2">
             {comment?.author?.username}
           </span>
           <span className="text-xs md:text-sm text-gray-200 break-words">

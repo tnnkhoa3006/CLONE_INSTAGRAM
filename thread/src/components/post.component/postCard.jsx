@@ -32,6 +32,9 @@ const PostCard = ({ postId }) => {
   const containerRef = useRef(null);
   const videoRef = useRef(null);
   const dispatch = useDispatch();
+  const [showFullCaption, setShowFullCaption] = useState(false);
+  const [isLongCaption, setIsLongCaption] = useState(false);
+  const captionRef = useRef(null);
 
   // Lấy post từ Redux store
   const post = posts.find((p) => p._id === postId);
@@ -40,6 +43,13 @@ const PostCard = ({ postId }) => {
   const liked = post?.likes?.includes(user?._id) || false;
   const postLikes = post?.likes?.length || 0;
   const saved = post?.isBookmarked || false;
+
+  useEffect(() => {
+    // Kiểm tra caption có dài hơn 2 dòng không
+    if (captionRef.current) {
+      setIsLongCaption(captionRef.current.scrollHeight > captionRef.current.clientHeight);
+    }
+  }, [post?.caption]);
 
   const handleEmojiClick = (emojiData) => {
     setText((prev) => prev + emojiData.emoji);
@@ -257,9 +267,32 @@ const PostCard = ({ postId }) => {
             <div className="text-[14px] items-center font-semibold">{postLikes} likes</div>
           </div>
 
-          <div className="text-sm font-normal leading-relaxed">
+          <div className="text-sm font-normal leading-relaxed relative">
             <span className="font-semibold text-sm cursor-pointer">{post.author.username}</span>{" "}
-            {post.caption}
+            <span
+              ref={captionRef}
+              className="font-light"
+              style={
+                showFullCaption
+                  ? {}
+                  : {
+                    display: "-webkit-box",
+                    WebkitLineClamp: 1,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }
+              }
+            >
+              {post.caption}
+            </span>
+            {isLongCaption && (
+              <button
+                className="text-gray-400 ml-2 text-xs font-semibold md:hover:underline"
+                onClick={() => setShowFullCaption((prev) => !prev)}
+              >
+                {showFullCaption ? "Ẩn bớt" : "Xem thêm"}
+              </button>
+            )}
           </div>
           {post.comments && post.comments.length > 0 && (
             <div

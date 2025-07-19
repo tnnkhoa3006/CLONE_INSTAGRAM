@@ -27,14 +27,14 @@ const PostSticker = ({ posts }) => {
         >
           {post.mediaType === "video" ? (
             <img
-              className="w-full h-[150px] md:h-[400px] object-cover rounded"
+              className="w-full h-[150px] md:h-[400px] object-cover rounded border border-zinc-700"
               src={getVideoThumbnail(post?.mediaUrl)}
               alt="video thumbnail"
               onError={(e) => (e.target.src = "/default-thumbnail.jpg")} // Fallback nếu thumbnail lỗi
             />
           ) : (
             <img
-              className="w-full h-[150px] md:h-[400px] object-cover rounded"
+              className="w-full h-[150px] md:h-[400px] object-cover rounded border border-zinc-700"
               src={post?.mediaUrl}
               alt="post"
               onError={(e) => (e.target.src = "/default-image.jpg")} // Fallback nếu ảnh lỗi

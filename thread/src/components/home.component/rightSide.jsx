@@ -32,7 +32,10 @@ const RightSide = () => {
     ? filteredSuggested
     : filteredSuggested.slice(0, SUGGESTED_LIMIT);
 
+  const [loadingFollow, setLoadingFollow] = useState(false);
+
   const handleFollow = async (sugUser) => {
+    setLoadingFollow(true);
     try {
       await followOrUnfollowUser(sugUser._id);
       const res = await api.get(`/user/profile/${user._id}`, { withCredentials: true });
@@ -41,6 +44,8 @@ const RightSide = () => {
       }
     } catch (err) {
       toast.error('Error following user');
+    } finally {
+      setLoadingFollow(false);
     }
   };
 
@@ -111,7 +116,7 @@ const RightSide = () => {
                   className="text-blue-400 font-medium text-xs cursor-pointer ml-1 md:ml-2 hover:text-blue-300"
                   onClick={() => handleFollow(sugUser)}
                 >
-                  Follow
+                  {loadingFollow ? "..." : "Follow"}
                 </span>
               </div>
             ))

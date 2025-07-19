@@ -121,24 +121,24 @@ const LeftSide = () => {
           } z-50 border-r border-zinc-700 bg-black transition-all duration-300 flex-col`}
       >
         <div className="relative w-full h-full flex flex-col items-center pt-6">
-          <Link to="/" className="mb-8 mr-5">
+          <Link to="/" className="mb-8">
             <img
               title="Instagram"
               src={showNotifications || showSearch ? instagram : Instagramlogo}
               alt="Instagram"
-              className={`${showNotifications || showSearch ? 'w-8 rounded-3xl' : 'w-24'
+              className={`${showNotifications || showSearch ? 'w-10 rounded-3xl ml-2' : 'w-28 mr-14'
                 } cursor-pointer transition-all duration-300`}
             />
           </Link>
-          <div className="w-full space-y-1.5">
+          <div className="w-full space-y-1.5 px-3">
             <div
               className={`w-full h-12 flex items-center space-x-4 hover:bg-zinc-800 rounded-md px-3 cursor-pointer`}
               onClick={() => navigate('/')}
             >
               {isHome ? (
-                <HomeIcon style={{ fontSize: 24, color: '#fff' }} />
+                <HomeIcon style={{ fontSize: 30, color: '#fff' }} />
               ) : (
-                <HomeOutlinedIcon style={{ fontSize: 24, color: '#fff' }} />
+                <HomeOutlinedIcon style={{ fontSize: 30, color: '#fff' }} />
               )}
               <div
                 className={`text-sm font-medium ${showNotifications || showSearch ? 'hidden' : 'inline'
@@ -155,7 +155,7 @@ const LeftSide = () => {
                 setShowNotifications(false);    // Tắt notification nếu đang mở
               }}
             >
-              <SearchIcon style={{ fontSize: 24, color: '#fff' }} />
+              <SearchIcon style={{ fontSize: 30, color: '#fff' }} />
               <div
                 className={`text-sm font-medium ${showNotifications || showSearch ? 'hidden' : 'inline'
                   } text-gray-400`}
@@ -166,7 +166,7 @@ const LeftSide = () => {
             <div className="w-full h-12 flex items-center space-x-4 hover:bg-zinc-800 rounded-md px-3 cursor-pointer"
               onClick={() => navigate('/reels')}
             >
-              <SlideshowOutlinedIcon style={{ fontSize: 24, color: '#fff' }} />
+              <SlideshowOutlinedIcon style={{ fontSize: 30, color: '#fff' }} />
               <div
                 className={`text-sm font-medium ${showNotifications || showSearch ? 'hidden' : 'inline'
                   } text-gray-400`}
@@ -180,9 +180,9 @@ const LeftSide = () => {
             >
               <div className="relative">
                 {isMessages ? (
-                  <SendIcon style={{ fontSize: 24, color: '#fff' }} />
+                  <SendIcon style={{ fontSize: 30, color: '#fff' }} />
                 ) : (
-                  <SendOutlinedIcon style={{ fontSize: 24, color: '#fff' }} />
+                  <SendOutlinedIcon style={{ fontSize: 30, color: '#fff' }} />
                 )}
                 {unreadCount > 0 && (
                   <div className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full z-10"></div>
@@ -205,9 +205,9 @@ const LeftSide = () => {
             >
               <div className="relative">
                 {showNotifications ? (
-                  <FavoriteIcon style={{ fontSize: 24, color: '#fff' }} />
+                  <FavoriteIcon style={{ fontSize: 30, color: '#fff' }} />
                 ) : (
-                  <FavoriteBorderIcon style={{ fontSize: 24, color: '#fff' }} />
+                  <FavoriteBorderIcon style={{ fontSize: 30, color: '#fff' }} />
                 )}
                 {likeNotifications?.length > 0 && !hasSeenNotifications && (
                   <div className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full z-10"></div>
@@ -224,7 +224,7 @@ const LeftSide = () => {
               className="w-full h-12 flex items-center space-x-4 hover:bg-zinc-800 rounded-md px-3 cursor-pointer"
               onClick={() => setShowAddPost(true)}
             >
-              <AddCircleOutlineIcon style={{ fontSize: 24, color: '#fff' }} />
+              <AddCircleOutlineIcon style={{ fontSize: 30, color: '#fff' }} />
               <div
                 className={`text-sm font-medium ${showNotifications || showSearch ? 'hidden' : 'inline'
                   } text-gray-400`}
@@ -237,7 +237,7 @@ const LeftSide = () => {
               onClick={handleProfile}
             >
               <img
-                className="w-6 h-6 rounded-full object-cover"
+                className="w-7 h-7 rounded-full object-cover"
                 src={user?.ProfilePicture || ''}
                 alt="profile image"
               />
@@ -250,7 +250,7 @@ const LeftSide = () => {
             </div>
             <div className="w-full space-y-1.5 pt-10 mt-auto">
               <div className="w-full h-12 flex items-center space-x-4 hover:bg-zinc-800 rounded-md px-3 cursor-pointer">
-                <PanoramaFishEyeIcon style={{ fontSize: 24, color: '#fff' }} />
+                <PanoramaFishEyeIcon style={{ fontSize: 30, color: '#fff' }} />
                 <div
                   className={`text-sm font-medium ${showNotifications || showSearch ? 'hidden' : 'inline'
                     } text-gray-400`}
@@ -259,7 +259,7 @@ const LeftSide = () => {
                 </div>
               </div>
               <div className="w-full h-12 flex items-center space-x-4 hover:bg-zinc-800 rounded-md px-3 cursor-pointer">
-                <GestureIcon style={{ fontSize: 24, color: '#fff' }} />
+                <GestureIcon style={{ fontSize: 30, color: '#fff' }} />
                 <div
                   className={`text-sm font-medium ${showNotifications || showSearch ? 'hidden' : 'inline'
                     } text-gray-400`}
@@ -271,7 +271,7 @@ const LeftSide = () => {
                 className="w-full h-12 flex items-center space-x-4 hover:bg-zinc-800 rounded-md px-3 cursor-pointer"
                 onClick={() => setShowMore(true)}
               >
-                <MenuIcon style={{ fontSize: 24, color: '#fff' }} />
+                <MenuIcon style={{ fontSize: 30, color: '#fff' }} />
                 <div
                   className={`text-sm font-medium ${showNotifications || showSearch ? 'hidden' : 'inline'} text-gray-400`}
                 >

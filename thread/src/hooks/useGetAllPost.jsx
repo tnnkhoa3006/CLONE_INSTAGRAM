@@ -13,9 +13,9 @@ const useGetAllPost = () => {
                 dispatch(setPostLoading(false));
                 return;
             }
+            dispatch(setPostLoading(true));
             try {
-                dispatch(setPostLoading(true));
-                const res = await api.get('/post/all', {withCredentials: true});
+                const res = await api.get('/post/all', { withCredentials: true });
                 if (res.data.success) {
                     dispatch(setPosts(res.data.posts));
                 } else {
