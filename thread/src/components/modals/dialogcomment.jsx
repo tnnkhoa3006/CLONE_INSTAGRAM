@@ -16,6 +16,7 @@ import { useDispatch, useSelector } from "react-redux";
 import api from "../../services/axios";
 import { toast } from "react-hot-toast";
 import { setPosts, setSelectedPost } from "../../redux/postSlice";
+import { Link } from "react-router-dom";
 
 const Dialogcomment = ({ isopen, onClose }) => {
     const { selectedPost, posts } = useSelector((store) => store.post);
@@ -250,14 +251,20 @@ const Dialogcomment = ({ isopen, onClose }) => {
                     <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
                         {/* Caption */}
                         <div className="flex items-start gap-3">
-                            <img
-                                className="w-10 h-10 aspect-square object-cover rounded-full border-2 border-r-pink-500 border-b-purple-400 border-l-yellow-400 border-t-orange-400 cursor-pointer"
-                                src={selectedPost?.author.ProfilePicture}
-                                alt="avatar"
-                                onError={(e) => (e.target.src = "/default-avatar.png")}
-                            />
+                            <Link to={`/profile/${selectedPost?.author._id}`}>
+                                <div className="w-10 h-10 rounded-full border-2 border-r-pink-500 border-b-purple-400 border-l-yellow-400 border-t-orange-400">
+                                    <img
+                                        className="w-full h-full rounded-full object-cover"
+                                        src={selectedPost?.author.ProfilePicture}
+                                        alt="avatar"
+                                        onError={(e) => (e.target.src = "/default-avatar.png")}
+                                    />
+                                </div>
+                            </Link>
                             <div className="text-sm">
-                                <span className="font-semibold cursor-pointer">{selectedPost?.author.username}</span>{" "}
+                                <Link to={`/profile/${selectedPost?.author._id}`}>
+                                    <span className="font-semibold cursor-pointer">{selectedPost?.author.username}</span>{" "}
+                                </Link>
                                 <span
                                     ref={captionRef}
                                     className="font-light"

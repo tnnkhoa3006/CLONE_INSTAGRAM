@@ -118,7 +118,7 @@ const LeftSide = () => {
       {/* Desktop Sidebar */}
       <div
         className={`hidden md:flex fixed h-screen top-0 left-0 ${showNotifications || showSearch ? 'w-[80px] pl-2' : 'w-[245px]'
-          } border-r border-zinc-700 bg-black transition-all duration-300 flex-col`}
+          } z-50 border-r border-zinc-700 bg-black transition-all duration-300 flex-col`}
       >
         <div className="relative w-full h-full flex flex-col items-center pt-6">
           <Link to="/" className="mb-8">
@@ -130,9 +130,9 @@ const LeftSide = () => {
                 } cursor-pointer transition-all duration-300`}
             />
           </Link>
-          <div className="w-full space-y-1.5 px-3">
+          <div className="w-full space-y-4 px-3">
             <div
-              className={`w-full h-12 flex items-center space-x-4 hover:bg-zinc-800 rounded-md px-3 cursor-pointer`}
+              className={`w-full h-12 flex items-center space-x-4 hover:bg-zinc-800 rounded-md py-2 px-3 cursor-pointer`}
               onClick={() => navigate('/')}
             >
               {isHome ? (

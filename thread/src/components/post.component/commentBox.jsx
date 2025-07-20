@@ -4,10 +4,10 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import api from "../../services/axios";
+import { Link } from "react-router-dom";
 dayjs.extend(relativeTime);
 
 const CommentBox = ({ comment, onReply, user }) => {
-  const userId = user?._id;
   const [isLiked, setIsLiked] = useState(user && comment.likes?.includes(user._id));
   const [likeCount, setLikeCount] = useState(comment.likes?.length || 0);
 
@@ -30,18 +30,22 @@ const CommentBox = ({ comment, onReply, user }) => {
   return (
     <div className="flex items-start py-1 md:py-2 group hover:bg-zinc-800 rounded-lg transition relative">
       {/* Avatar */}
-      <img
-        className="w-10 h-10 md:w-[40px] md:h-[40px] object-cover rounded-full mt-0.5 md:mt-1 mr-2 md:mr-3 border border-zinc-700"
-        src={comment?.author?.ProfilePicture}
-        alt="avatar"
-        onError={(e) => (e.target.src = "/default-avatar.png")}
-      />
+      <Link to={`/profile/${comment?.author?._id}`}>
+        <img
+          className="w-10 h-10 md:w-[40px] md:h-[40px] object-cover rounded-full mt-0.5 md:mt-1 mr-2 md:mr-3 border border-zinc-700"
+          src={comment?.author?.ProfilePicture}
+          alt="avatar"
+          onError={(e) => (e.target.src = "/default-avatar.png")}
+        />
+      </Link>
       {/* Main content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center flex-wrap">
-          <span className="font-bold text-white text-sm md:text-sm cursor-pointer hover:underline mr-1 md:mr-2">
-            {comment?.author?.username}
-          </span>
+          <Link to={`/profile/${comment?.author?._id}`}>
+            <span className="font-bold text-white text-sm md:text-sm cursor-pointer hover:underline mr-1 md:mr-2">
+              {comment?.author?.username}
+            </span>
+          </Link>
           <span className="text-xs md:text-sm text-gray-200 break-words">
             {comment?.text}
           </span>

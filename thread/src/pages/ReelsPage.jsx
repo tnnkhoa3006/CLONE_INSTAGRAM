@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import FavoriteBorderRoundedIcon from "@mui/icons-material/FavoriteBorderRounded";
 import FavoriteRoundedIcon from "@mui/icons-material/FavoriteRounded";
@@ -19,17 +19,25 @@ const ReelsPage = () => {
   const dispatch = useDispatch();
   const { posts } = useSelector((store) => store.post);
   const { user } = useSelector((store) => store.auth);
-
-  const videoPosts = posts.filter((p) => p.mediaType === "video");
-
   const [showOptions, setShowOptions] = useState(false);
   const [showComment, setShowComment] = useState(false);
   const [selectedPost, setSelectedPostLocal] = useState(null);
-  const [commentText, setCommentText] = useState("");
   const [mutedStates, setMutedStates] = useState([]);
   const [showFullCaption, setShowFullCaption] = useState({});
   const [isLongCaption, setIsLongCaption] = useState({});
   const captionRefs = useRef({});
+  const shuffleArray = (array) => {
+    const newArr = [...array];
+    for (let i = newArr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+    }
+    return newArr;
+  };
+  const videoPosts = useMemo(() => {
+    const videos = posts.filter((p) => p.mediaType === "video");
+    return shuffleArray(videos);
+  }, [posts]);
 
   const videoRefs = useRef([]);
   const containerRef = useRef(null);
@@ -96,41 +104,41 @@ const ReelsPage = () => {
     // Optimistic update
     const liked = post.likes.includes(user._id);
     const updatedLikes = liked
-        ? post.likes.filter((id) => id !== user._id)
-        : [...post.likes, user._id];
+      ? post.likes.filter((id) => id !== user._id)
+      : [...post.likes, user._id];
 
     // Cập nhật UI ngay
     const updatedPostData = posts.map((p) =>
-        p._id === post._id ? { ...p, likes: updatedLikes } : p
+      p._id === post._id ? { ...p, likes: updatedLikes } : p
     );
     dispatch(setPosts(updatedPostData));
 
     try {
-        const action = liked ? "dislike" : "like";
-        const res = await api.post(`/post/${post._id}/${action}`, {}, { withCredentials: true });
-        if (!res.data.success) {
-            toast.error(res.data.message);
-            // Rollback
-            const rollbackLikes = liked
-                ? [...post.likes, user._id]
-                : post.likes.filter((id) => id !== user._id);
-            const rollbackPostData = posts.map((p) =>
-                p._id === post._id ? { ...p, likes: rollbackLikes } : p
-            );
-            dispatch(setPosts(rollbackPostData));
-        }
-    } catch (error) {
-        toast.error(error?.response?.data?.message || "Có lỗi xảy ra khi like!");
+      const action = liked ? "dislike" : "like";
+      const res = await api.post(`/post/${post._id}/${action}`, {}, { withCredentials: true });
+      if (!res.data.success) {
+        toast.error(res.data.message);
         // Rollback
         const rollbackLikes = liked
-            ? [...post.likes, user._id]
-            : post.likes.filter((id) => id !== user._id);
+          ? [...post.likes, user._id]
+          : post.likes.filter((id) => id !== user._id);
         const rollbackPostData = posts.map((p) =>
-            p._id === post._id ? { ...p, likes: rollbackLikes } : p
+          p._id === post._id ? { ...p, likes: rollbackLikes } : p
         );
         dispatch(setPosts(rollbackPostData));
+      }
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Có lỗi xảy ra khi like!");
+      // Rollback
+      const rollbackLikes = liked
+        ? [...post.likes, user._id]
+        : post.likes.filter((id) => id !== user._id);
+      const rollbackPostData = posts.map((p) =>
+        p._id === post._id ? { ...p, likes: rollbackLikes } : p
+      );
+      dispatch(setPosts(rollbackPostData));
     }
-};
+  };
 
   const bookMarkHandler = async (post) => {
     try {
@@ -147,30 +155,7 @@ const ReelsPage = () => {
     }
   };
 
-  const commentHandler = async (post) => {
-    if (!commentText.trim()) return toast.error("Bạn chưa nhập nội dung bình luận");
-    try {
-      const res = await api.post(
-        `/post/${post._id}/comment`,
-        { text: commentText },
-        { headers: { "Content-Type": "application/json" }, withCredentials: true }
-      );
-      if (res.data.success) {
-        const currentPost = posts.find((p) => p._id === post._id);
-        const updateCommentData = [...(currentPost?.comments || []), res.data.comment];
-        const updatePostData = posts.map((p) =>
-          p._id === post._id ? { ...p, comments: updateCommentData } : p
-        );
-        dispatch(setPosts(updatePostData));
-        toast.success(res.data.message);
-        setCommentText("");
-        setShowComment(false);
-      }
-    } catch (error) {
-      toast.error(error?.response?.data?.message || "Có lỗi xảy ra");
-    }
-  };
-
+  // Show options dialog
   const handleShowOptions = (post) => {
     setSelectedPostLocal(post);
     setShowOptions(true);
@@ -218,7 +203,7 @@ const ReelsPage = () => {
 
                 {/* 🔇 MUTE/UNMUTE - Mobile optimized */}
                 <div className="absolute top-16 right-3 sm:top-16 sm:right-4 md:top-4 md:right-4 z-60 bg-black/60 rounded-full p-2 sm:p-3 backdrop-blur-sm">
-                  <button 
+                  <button
                     onClick={() => toggleMute(idx)}
                     className="flex items-center justify-center touch-manipulation"
                   >
@@ -241,7 +226,7 @@ const ReelsPage = () => {
                         onError={(e) => (e.target.src = "/default-avatar.png")}
                       />
                     </Link>
-                    <Link 
+                    <Link
                       to={`/profile/${post.author._id}`}
                       className="flex-shrink-0 min-w-0"
                     >
@@ -249,14 +234,14 @@ const ReelsPage = () => {
                         @{post.author.username}
                       </span>
                     </Link>
-                    <button 
-                      className="ml-auto flex-shrink-0 p-1 touch-manipulation" 
+                    <button
+                      className="ml-auto flex-shrink-0 p-1 touch-manipulation z-50 relative"
                       onClick={() => handleShowOptions(post)}
                     >
                       <MoreHorizIcon className="text-white text-lg sm:text-xl" />
                     </button>
                   </div>
-                  
+
                   {/* Caption - Mobile optimized */}
                   <div className="flex items-start text-xs sm:text-sm md:text-[14px] leading-relaxed break-words">
                     <span
@@ -286,7 +271,7 @@ const ReelsPage = () => {
                     </span>
                     {(isLongCaption[post._id] || showFullCaption[post._id]) && (
                       <button
-                        className="text-gray-300 text-xs font-semibold hover:underline flex-shrink-0 ml-1 touch-manipulation"
+                        className="text-gray-300 text-xs font-semibold hover:underline flex-shrink-0 ml-1 touch-manipulation z-50 relative"
                         onClick={() =>
                           setShowFullCaption((prev) => ({
                             ...prev,
@@ -305,7 +290,7 @@ const ReelsPage = () => {
                 <div className="absolute right-2 top-[40%] sm:right-3 md:right-3 bottom-32 sm:bottom-36 md:bottom-28 md:top-[40%] flex flex-col items-center space-y-4 sm:space-y-5">
                   {/* Like */}
                   <div className="flex flex-col items-center">
-                    <button 
+                    <button
                       className="bg-black/30 rounded-full p-2 sm:p-3 backdrop-blur-sm touch-manipulation active:scale-95 transition-transform"
                       onClick={() => likeOrDislikeHandler(post)}
                     >
@@ -323,10 +308,10 @@ const ReelsPage = () => {
                       {post.likes.length}
                     </div>
                   </div>
-                  
+
                   {/* Comment */}
                   <div className="flex flex-col items-center">
-                    <button 
+                    <button
                       className="bg-black/30 rounded-full p-2 sm:p-3 backdrop-blur-sm touch-manipulation active:scale-95 transition-transform"
                       onClick={() => handleShowComment(post)}
                     >
@@ -338,10 +323,10 @@ const ReelsPage = () => {
                       {post.comments.length}
                     </div>
                   </div>
-                  
+
                   {/* Bookmark */}
                   <div className="flex flex-col items-center">
-                    <button 
+                    <button
                       className="bg-black/30 rounded-full p-2 sm:p-3 backdrop-blur-sm touch-manipulation active:scale-95 transition-transform"
                       onClick={() => bookMarkHandler(post)}
                     >

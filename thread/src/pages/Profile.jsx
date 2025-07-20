@@ -197,7 +197,7 @@ const Profile = () => {
         </div>
 
         {/* Content scrolls as part of the page */}
-        <div className="bg-black text-white p-2 md:p-4">
+        <div className="bg-black text-white pt-14 pb-16 p-2 md:p-4 md:pt-14">
           {NavBar === 1 && <PostSticker posts={userProfile?.posts} />}
           {NavBar === 2 && <PostSticker posts={userProfile?.bookmarks} />}
           {NavBar === 3 && <div className="p-2 md:p-4 text-center text-zinc-400">No following yet.</div>}
