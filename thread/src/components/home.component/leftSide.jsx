@@ -118,7 +118,7 @@ const LeftSide = () => {
       {/* Desktop Sidebar */}
       <div
         className={`hidden md:flex fixed h-screen top-0 left-0 ${showNotifications || showSearch ? 'w-[80px] pl-2' : 'w-[245px]'
-          } z-50 border-r border-zinc-700 bg-black transition-all duration-300 flex-col`}
+          } border-r border-zinc-700 bg-black transition-all duration-300 flex-col`}
       >
         <div className="relative w-full h-full flex flex-col items-center pt-6">
           <Link to="/" className="mb-8">
@@ -283,7 +283,7 @@ const LeftSide = () => {
         </div>
       </div>
       {/* Mobile Top Bar */}
-      <div className="md:hidden fixed top-0 left-0 w-full h-14 bg-black border-b border-zinc-700 z-50 flex items-center justify-between px-4">
+      <div className="md:hidden fixed top-0 left-0 w-full h-14 bg-black border-b border-zinc-700 z-[5] flex items-center justify-between px-4">
         <Link to="/">
           <img src={Instagramlogo} alt="Instagram" className="w-24" />
         </Link>

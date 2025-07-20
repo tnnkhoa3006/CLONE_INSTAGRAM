@@ -101,7 +101,7 @@ const Dialogaddpost = ({ isopen, onClose }) => {
 
     return (
         <div
-            className={`fixed inset-0 z-50 flex justify-center items-center px-4 transition-opacity duration-300 ${isFading ? "opacity-100" : "opacity-0"
+            className={`fixed inset-0 z-[9999] flex justify-center items-center px-4 transition-opacity duration-300 ${isFading ? "opacity-100" : "opacity-0"
                 }`}
             style={{ backgroundColor: isFading ? "rgba(0, 0, 0, 0.6)" : "rgba(0, 0, 0, 0)" }}
         >

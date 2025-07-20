@@ -190,7 +190,7 @@ const ReelsPage = () => {
 
   return (
     <div
-      className="h-screen overflow-y-scroll md:w-[450px] md:mx-auto md:flex md:flex-col md:items-center snap-y snap-mandatory bg-black no-scrollbar"
+      className="h-screen overflow-y-scroll w-full md:w-[450px] md:mx-auto md:flex md:flex-col md:items-center snap-y snap-mandatory bg-black no-scrollbar md:ml-[245px] pt-14 md:pt-0"
       ref={containerRef}
     >
       {videoPosts.length === 0 ? (
@@ -205,64 +205,77 @@ const ReelsPage = () => {
               className="relative w-full h-screen md:h-[700px] snap-start flex-shrink-0 md:pt-2 md:mt-4"
             >
               {/* 🎥 VIDEO */}
-              <div className="relative w-full h-full border border-gray-700">
+              <div className="relative w-full h-full md:border md:border-gray-700">
                 <video
                   data-index={idx}
                   ref={(el) => (videoRefs.current[idx] = el)}
                   src={post.mediaUrl}
-                  className="absolute top-0 left-0 w-full h-full object-cover"
+                  className="absolute top-0 left-0 w-full h-full"
                   loop
                   playsInline
                   muted={mutedStates[idx]}
                 />
 
-                {/* 🔇 MUTE/UNMUTE */}
-                <div className="absolute top-20 right-4 md:top-0 md:right-0 z-60 bg-black/50 rounded-full p-1">
-                  <button onClick={() => toggleMute(idx)}>
+                {/* 🔇 MUTE/UNMUTE - Mobile optimized */}
+                <div className="absolute top-16 right-3 sm:top-16 sm:right-4 md:top-4 md:right-4 z-60 bg-black/60 rounded-full p-2 sm:p-3 backdrop-blur-sm">
+                  <button 
+                    onClick={() => toggleMute(idx)}
+                    className="flex items-center justify-center touch-manipulation"
+                  >
                     {mutedStates[idx] ? (
-                      <VolumeOffIcon className="text-white" />
+                      <VolumeOffIcon className="text-white text-base sm:text-lg" />
                     ) : (
-                      <VolumeUpIcon className="text-white" />
+                      <VolumeUpIcon className="text-white text-base sm:text-lg" />
                     )}
                   </button>
                 </div>
 
-                {/* 📄 INFO & CAPTION */}
-                <div className="absolute bottom-16 md:bottom-0 w-full text-white px-4 pb-6 pt-16 bg-gradient-to-t from-black/70 via-black/40 to-transparent">
-                  <div className="flex items-center gap-2 text-sm mb-1">
-                    <Link to={`/profile/${post.author._id}`}>
+                {/* 📄 INFO & CAPTION - Mobile optimized */}
+                <div className="absolute bottom-20 sm:bottom-24 md:bottom-0 left-0 right-0 text-white px-3 sm:px-4 pb-4 sm:pb-6 pt-8 sm:pt-12 md:pt-16 bg-gradient-to-t from-black/80 via-black/50 to-transparent">
+                  <div className="flex items-center gap-2 sm:gap-3 text-sm mb-2 sm:mb-3">
+                    <Link to={`/profile/${post.author._id}`} className="flex-shrink-0">
                       <img
                         src={post.author.ProfilePicture || "/default-avatar.png"}
                         alt="avatar"
-                        className="w-9 h-9 rounded-full object-cover border border-white"
+                        className="w-8 h-8 sm:w-10 sm:h-10 md:w-9 md:h-9 rounded-full object-cover border border-white"
                         onError={(e) => (e.target.src = "/default-avatar.png")}
                       />
                     </Link>
-                    <Link to={`/profile/${post.author._id}`}>
-                      <span className="font-medium text-[16px] truncate">@{post.author.username}</span>
+                    <Link 
+                      to={`/profile/${post.author._id}`}
+                      className="flex-shrink-0 min-w-0"
+                    >
+                      <span className="font-medium text-sm sm:text-base md:text-[16px] truncate block max-w-[150px] sm:max-w-[200px]">
+                        @{post.author.username}
+                      </span>
                     </Link>
-                    <button className="ml-auto" onClick={() => handleShowOptions(post)}>
-                      <MoreHorizIcon className="text-white" />
+                    <button 
+                      className="ml-auto flex-shrink-0 p-1 touch-manipulation" 
+                      onClick={() => handleShowOptions(post)}
+                    >
+                      <MoreHorizIcon className="text-white text-lg sm:text-xl" />
                     </button>
                   </div>
-                  <div className="flex items-center pt-4 text-[14px] leading-snug break-words flex-wrap">
+                  
+                  {/* Caption - Mobile optimized */}
+                  <div className="flex items-start text-xs sm:text-sm md:text-[14px] leading-relaxed break-words">
                     <span
                       ref={handleCaptionRef(post._id)}
                       className={
                         showFullCaption[post._id]
-                          ? "font-light max-h-24 overflow-y-auto"
-                          : "font-light line-clamp-1"
+                          ? "font-light max-h-16 sm:max-h-20 md:max-h-24 overflow-y-auto pr-2"
+                          : "font-light line-clamp-2 sm:line-clamp-1 pr-2"
                       }
                       style={
                         showFullCaption[post._id]
                           ? {
-                            maxHeight: "96px",
+                            maxHeight: "64px",
                             overflowY: "auto",
                             display: "block",
                           }
                           : {
                             display: "-webkit-box",
-                            WebkitLineClamp: 1,
+                            WebkitLineClamp: window.innerWidth < 640 ? 2 : 1,
                             WebkitBoxOrient: "vertical",
                             overflow: "hidden",
                             maxWidth: "100%",
@@ -273,7 +286,7 @@ const ReelsPage = () => {
                     </span>
                     {(isLongCaption[post._id] || showFullCaption[post._id]) && (
                       <button
-                        className="text-gray-400 ml-2 text-xs font-semibold md:hover:underline flex-shrink-0"
+                        className="text-gray-300 text-xs font-semibold hover:underline flex-shrink-0 ml-1 touch-manipulation"
                         onClick={() =>
                           setShowFullCaption((prev) => ({
                             ...prev,
@@ -288,46 +301,60 @@ const ReelsPage = () => {
                   </div>
                 </div>
 
-                {/* ❤️ ACTION ICONS */}
-                <div className="absolute right-3 top-1/2 sm:bottom-28 flex flex-col items-center space-y-5">
+                {/* ❤️ ACTION ICONS - Mobile optimized */}
+                <div className="absolute right-2 top-[40%] sm:right-3 md:right-3 bottom-32 sm:bottom-36 md:bottom-28 md:top-[40%] flex flex-col items-center space-y-4 sm:space-y-5">
+                  {/* Like */}
                   <div className="flex flex-col items-center">
-                    {liked ? (
-                      <FavoriteRoundedIcon
-                        fontSize="large"
-                        className="text-red-500 cursor-pointer"
-                        onClick={() => likeOrDislikeHandler(post)}
-                      />
-                    ) : (
-                      <FavoriteBorderRoundedIcon
-                        fontSize="large"
-                        className="text-white cursor-pointer"
-                        onClick={() => likeOrDislikeHandler(post)}
-                      />
-                    )}
-                    <div className="text-xs text-white">{post.likes.length}</div>
+                    <button 
+                      className="bg-black/30 rounded-full p-2 sm:p-3 backdrop-blur-sm touch-manipulation active:scale-95 transition-transform"
+                      onClick={() => likeOrDislikeHandler(post)}
+                    >
+                      {liked ? (
+                        <FavoriteRoundedIcon
+                          className="text-red-500 text-xl sm:text-2xl md:text-3xl"
+                        />
+                      ) : (
+                        <FavoriteBorderRoundedIcon
+                          className="text-white text-xl sm:text-2xl md:text-3xl"
+                        />
+                      )}
+                    </button>
+                    <div className="text-xs sm:text-sm text-white mt-1 font-medium">
+                      {post.likes.length}
+                    </div>
                   </div>
+                  
+                  {/* Comment */}
                   <div className="flex flex-col items-center">
-                    <ModeCommentOutlinedIcon
-                      fontSize="large"
-                      className="text-white cursor-pointer"
+                    <button 
+                      className="bg-black/30 rounded-full p-2 sm:p-3 backdrop-blur-sm touch-manipulation active:scale-95 transition-transform"
                       onClick={() => handleShowComment(post)}
-                    />
-                    <div className="text-xs text-white">{post.comments.length}</div>
+                    >
+                      <ModeCommentOutlinedIcon
+                        className="text-white text-xl sm:text-2xl md:text-3xl"
+                      />
+                    </button>
+                    <div className="text-xs sm:text-sm text-white mt-1 font-medium">
+                      {post.comments.length}
+                    </div>
                   </div>
-                  <div>
-                    {saved ? (
-                      <BookmarkIcon
-                        fontSize="large"
-                        className="text-white cursor-pointer"
-                        onClick={() => bookMarkHandler(post)}
-                      />
-                    ) : (
-                      <TurnedInNotIcon
-                        fontSize="large"
-                        className="text-white cursor-pointer"
-                        onClick={() => bookMarkHandler(post)}
-                      />
-                    )}
+                  
+                  {/* Bookmark */}
+                  <div className="flex flex-col items-center">
+                    <button 
+                      className="bg-black/30 rounded-full p-2 sm:p-3 backdrop-blur-sm touch-manipulation active:scale-95 transition-transform"
+                      onClick={() => bookMarkHandler(post)}
+                    >
+                      {saved ? (
+                        <BookmarkIcon
+                          className="text-white text-xl sm:text-2xl md:text-3xl"
+                        />
+                      ) : (
+                        <TurnedInNotIcon
+                          className="text-white text-xl sm:text-2xl md:text-3xl"
+                        />
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>

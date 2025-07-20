@@ -198,15 +198,9 @@ const PostCard = ({ postId }) => {
                   ref={videoRef}
                   className="w-full h-full"
                   src={post.mediaUrl}
-                  muted={muted}
+                  controls
                   loop
                 />
-                <button
-                  onClick={() => setMuted((prev) => !prev)}
-                  className="absolute bottom-2 right-2 z-10 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition"
-                >
-                  {muted ? <VolumeOffIcon fontSize="small" /> : <VolumeUpIcon fontSize="small" />}
-                </button>
               </div>
             ) : (
               <img

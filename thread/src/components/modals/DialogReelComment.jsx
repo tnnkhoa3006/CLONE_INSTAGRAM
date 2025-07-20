@@ -231,7 +231,7 @@ const DialogReelComment = ({ isOpen, onClose, post }) => {
                     <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
                         <div className="flex items-start gap-2">
                             <img
-                                className="w-10 h-10 object-cover rounded-full border-2 border-r-pink-500 border-b-purple-400 border-l-yellow-400 border-t-orange-400 cursor-pointer"
+                                className="w-10 h-10 aspect-square object-cover rounded-full border-2 border-r-pink-500 border-b-purple-400 border-l-yellow-400 border-t-orange-400 cursor-pointer"
                                 src={currentPost.author.ProfilePicture}
                                 alt="avatar"
                                 onError={(e) => (e.target.src = "/default-avatar.png")}

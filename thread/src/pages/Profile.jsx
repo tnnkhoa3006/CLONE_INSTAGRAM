@@ -86,7 +86,7 @@ const Profile = () => {
     <div className="bg-black text-white min-h-screen flex flex-col overflow-y-auto">
       <div className="w-full max-w-4xl mx-auto flex-grow flex flex-col">
         {/* Header + Navbar */}
-        <div className="sticky top-0 z-20 bg-black">
+        <div className="sticky top-12 z-[10] bg-black">
           <div className="md:hidden flex items-center p-4 border-b border-zinc-800">
             <button
               onClick={handleBack}
