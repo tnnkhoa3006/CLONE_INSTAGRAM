@@ -12,7 +12,6 @@ import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 
 const CallVideoPage = () => {
     const location = useLocation();
-    const navigate = useNavigate();
     const { user: currentUser } = useSelector((state) => state.auth);
 
     const query = new URLSearchParams(location.search);
@@ -68,7 +67,15 @@ const CallVideoPage = () => {
     }, [localStream, localVideo]);
 
     useEffect(() => {
-        // Khi kết thúc cuộc gọi, đóng popup và reload trang chính
+        console.log("Call state:", callState);
+        // When the call is declined by the receiver, close the window
+        if (callState === 'declined') {
+            window.close();
+        }
+    }, [callState]);
+
+    useEffect(() => {
+        // When the call ends (e.g., other user hangs up), close the window
         const wasCallActive = prevCallState === 'in-call' || prevCallState === 'calling';
         if (wasCallActive && callState === 'idle') {
             // Gửi tín hiệu về tab chính để reload

@@ -29,6 +29,7 @@ function AppContent() {
   const { loading: postLoading } = useSelector(store => store.post);
   const { user } = useSelector(store => store.auth);
   const { incomingCall } = useSelector(store => store.call);
+  const { socket } = useSelector(store => store.socketio);
   const [showSplash, setShowSplash] = useState(true);
   const location = useLocation();
   const dispatch = useDispatch();
@@ -52,6 +53,12 @@ function AppContent() {
   }
 
   const handleDeclineCall = () => {
+    if (incomingCall && socket) {
+      socket.emit("declineCall", {
+        to: incomingCall.from,
+        from: user._id
+      });
+    }
     dispatch(clearIncomingCall());
   }
 

@@ -152,40 +152,52 @@ io.on('connection', (socket) => {
         });
     });
 
+    // --- CALL SIGNALING EVENTS ---
+    socket.on('callUser', (data) => {
+        const targetSocketId = userSocketMap[data.to];
+        if (targetSocketId) {
+            io.to(targetSocketId).emit("callMade", {
+                offer: data.offer,
+                from: data.from,
+                caller: data.caller,
+            });
+        }
+    });
+
+    socket.on('makeAnswer', (data) => {
+        const targetSocketId = userSocketMap[data.to];
+        if (targetSocketId) {
+            io.to(targetSocketId).emit("answerMade", {
+                answer: data.answer,
+                from: data.from,
+            });
+        }
+    });
+
+    socket.on('iceCandidate', (data) => {
+        const targetSocketId = userSocketMap[data.to];
+        if (targetSocketId) {
+            io.to(targetSocketId).emit("iceCandidate", {
+                candidate: data.candidate,
+                from: data.from,
+            });
+        }
+    });
+
+    socket.on('endCall', (data) => {
+        const targetSocketId = userSocketMap[data.to];
+        if (targetSocketId) {
+            io.to(targetSocketId).emit('callEnded');
+        }
+    });
+
+    // --- DECLINE CALL EVENT ---
     socket.on('declineCall', (data) => {
         const targetSocketId = userSocketMap[data.to];
         if (targetSocketId) {
             io.to(targetSocketId).emit('callDeclined', { from: data.from });
         }
     });
-
-    // WebRTC signaling
-    socket.on("callUser", (data) => {
-        io.to(userSocketMap[data.to]).emit("callMade", {
-            offer: data.offer,
-            from: data.from,
-            caller: data.caller,
-        });
-    });
-
-    socket.on("makeAnswer", (data) => {
-        io.to(userSocketMap[data.to]).emit("answerMade", {
-            answer: data.answer,
-            from: data.from,
-        });
-    });
-
-    socket.on("iceCandidate", (data) => {
-        io.to(userSocketMap[data.to]).emit("iceCandidate", {
-            candidate: data.candidate,
-            from: data.from,
-        });
-    });
-    socket.on('endCall', (data) => {
-        if (userSocketMap[data.to]) {
-          io.to(userSocketMap[data.to]).emit('callEnded');
-        }
-      });
 
     socket.on("disconnect", () => {
         console.log("user disconnected", socket.id);
