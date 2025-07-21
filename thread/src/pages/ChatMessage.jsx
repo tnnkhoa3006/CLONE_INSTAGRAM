@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import DriveFileRenameOutlineOutlinedIcon from "@mui/icons-material/DriveFileRenameOutlineOutlined";
 import CallOutlinedIcon from "@mui/icons-material/CallOutlined";
 import VideocamOutlinedIcon from "@mui/icons-material/VideocamOutlined";
@@ -102,6 +101,12 @@ const ChatMessage = () => {
         dispatch(setSelectedUser(null));
     };
 
+    const handleInitiateCall = () => {
+        if (!selectedUser) return;
+        const url = `/call?targetUserId=${selectedUser._id}&username=${selectedUser.username}&avatar=${selectedUser.ProfilePicture}`;
+        window.open(url, '_blank', 'width=800,height=600');
+    }
+
     return (
         <div className="flex w-full h-screen bg-black text-white">
             {/* Sidebar */}
@@ -176,7 +181,11 @@ const ChatMessage = () => {
                             </div>
                             <div className="flex space-x-3 md:space-x-4 flex-shrink-0">
                                 <CallOutlinedIcon style={{ fontSize: 24 }} className="cursor-pointer text-zinc-400 hover:text-white transition-colors" />
-                                <VideocamOutlinedIcon style={{ fontSize: 24 }} className="cursor-pointer text-zinc-400 hover:text-white transition-colors" />
+                                <VideocamOutlinedIcon
+                                    style={{ fontSize: 24 }}
+                                    className="cursor-pointer text-zinc-400 hover:text-white transition-colors"
+                                    onClick={handleInitiateCall}
+                                />
                                 <HelpOutlineOutlinedIcon style={{ fontSize: 24 }} className="cursor-pointer text-zinc-400 hover:text-white transition-colors" />
                             </div>
                         </header>

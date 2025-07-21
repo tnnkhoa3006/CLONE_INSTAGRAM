@@ -7,13 +7,14 @@ import Profile from './pages/Profile';
 import Splashpage from './pages/Splashpage';
 import ResetPassword from './pages/ResetPassword';
 import ReelsPage from './pages/ReelsPage';
+import CallVideoPage from './pages/CallVideoPage';
 import './App.css';
 import { Toaster } from 'react-hot-toast';
 import MainLayout from './pages/mainLayout';
 import EditProfile from './pages/EditProfile';
 import ChatMessage from './pages/ChatMessage';
 import ProtectRoutes from './utils/ProtectRoutes';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import useListenPostLike from './hooks/useListenPostLike';
 import useSocket from './hooks/useSocket';
 import useListenComment from './hooks/useListenComment';
@@ -21,12 +22,16 @@ import useListenPostDelete from './hooks/useListenPostDelete';
 import useGetRTM from './hooks/useGetRTM';
 import useGetAllMessage from './hooks/useGetAllMessage';
 import useGetAllPost from './hooks/useGetAllPost';
+import DialogCall from './components/modals/dialogCall';
+import { clearIncomingCall } from './redux/callSlice';
 
 function AppContent() {
   const { loading: postLoading } = useSelector(store => store.post);
   const { user } = useSelector(store => store.auth);
+  const { incomingCall } = useSelector(store => store.call);
   const [showSplash, setShowSplash] = useState(true);
   const location = useLocation();
+  const dispatch = useDispatch();
 
   // Gọi các custom hook ở đây
   useGetAllPost();
@@ -36,6 +41,19 @@ function AppContent() {
   useListenPostLike();
   useListenComment();
   useListenPostDelete();
+
+  const handleAcceptCall = () => {
+    if (!incomingCall || !incomingCall.caller) return;
+    const { from, offer, caller } = incomingCall;
+
+    const url = `/call?isReceiving=true&from=${from}&username=${caller.username}&avatar=${caller.avatar}&offer=${encodeURIComponent(JSON.stringify(offer))}`;
+    window.open(url, '_blank', 'width=800,height=600');
+    dispatch(clearIncomingCall());
+  }
+
+  const handleDeclineCall = () => {
+    dispatch(clearIncomingCall());
+  }
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -57,6 +75,16 @@ function AppContent() {
     }
   }, [postLoading]);
 
+  useEffect(() => {
+    const handleCallEnded = (event) => {
+      if (event.data && event.data.type === 'CALL_ENDED') {
+        window.location.reload();
+      }
+    };
+    window.addEventListener('message', handleCallEnded);
+    return () => window.removeEventListener('message', handleCallEnded);
+  }, []);
+
 
   // Check if the current route is /login or /register
   const isAuthRoute = location.pathname === '/login' || location.pathname === '/register';
@@ -64,6 +92,15 @@ function AppContent() {
   return (
     <>
       <Toaster position="bottom-right" reverseOrder={false} />
+      {incomingCall && incomingCall.caller && (
+        <DialogCall
+            isOpen={true}
+            onAccept={handleAcceptCall}
+            onDecline={handleDeclineCall}
+            callerName={incomingCall.caller.username}
+            callerAvatar={incomingCall.caller.avatar}
+        />
+      )}
       <div className="min-h-screen text-black dark:bg-black dark:text-white transition-all">
         {showSplash && !isAuthRoute ? (
           <Splashpage />
@@ -72,6 +109,7 @@ function AppContent() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/resetpassword/:token" element={<ResetPassword />} />
+            <Route path="/call" element={<CallVideoPage />} />
             <Route element={<ProtectRoutes><MainLayout /></ProtectRoutes>}>
               <Route path="/" element={<Home />} />
               <Route path="/profile/:id" element={<Profile />} />

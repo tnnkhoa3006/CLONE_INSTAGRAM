@@ -4,6 +4,7 @@ import { setOnlineUsers } from "../redux/chatSlice";
 import { setSocket } from "../redux/socketSlice";
 import { setLikeNotification } from "../redux/rtnSlice";
 import { createSocket } from "../sockets/socket";
+import { setIncomingCall } from "../redux/callSlice";
 
 const useSocket = (user) => {
   const dispatch = useDispatch();
@@ -26,6 +27,10 @@ const useSocket = (user) => {
 
       socketio.on('notification', (notification) => {
         dispatch(setLikeNotification(notification));
+      });
+
+      socketio.on('callMade', (data) => {
+        dispatch(setIncomingCall(data));
       });
 
       dispatch(setSocket(socketio));

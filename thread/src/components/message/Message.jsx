@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
+import VideocamIcon from '@mui/icons-material/Videocam';
 
 const Message = ({ selectedUser }) => {
   const { messages } = useSelector((store) => store.chat);
@@ -64,7 +65,19 @@ const Message = ({ selectedUser }) => {
         ) : (
           messages
             ?.filter(Boolean)
-            .map((msg, idx) => (
+            .map((msg, idx) => {
+              if (msg.messageType === 'call') {
+                return (
+                  <div key={msg._id} className="flex justify-center my-2">
+                      <div className="flex items-center gap-2 text-xs text-zinc-400 bg-zinc-800 px-3 py-1 rounded-full">
+                          <VideocamIcon style={{fontSize: '16px'}}/>
+                          <span>{msg.message}</span>
+                      </div>
+                  </div>
+                );
+              }
+
+              return (
               <div
                 key={msg._id}
                 className={`flex ${msg.senderId === user._id ? "justify-end" : "justify-start"} mb-2`}
@@ -77,7 +90,7 @@ const Message = ({ selectedUser }) => {
                   {msg.message}
                 </div>
               </div>
-            ))
+            )})
         )}
         <div ref={bottomRef} />
       </div>

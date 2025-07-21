@@ -367,7 +367,6 @@ const LeftSide = () => {
       {showMore && (
         <MoreModal isOpen={showMore} onClose={() => setShowMore(false)} />
       )}
-
     </>
   );
 };
