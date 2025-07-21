@@ -63,9 +63,9 @@ export const useCall = (userId) => {
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
         {
-          urls: "turn:turn.viagenie.ca",
-          credential: "webrtc",
-          username: "webrtc@live.com"
+          urls: "turn:openrelay.metered.ca:80",
+          username: "openrelayproject",
+          credential: "openrelayproject"
         }
       ]
     });
