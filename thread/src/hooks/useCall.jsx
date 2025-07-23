@@ -61,13 +61,30 @@ export const useCall = (userId) => {
     if (!socket) return null;
     const peerConnection = new RTCPeerConnection({
       iceServers: [
-        { urls: "stun:stun.l.google.com:19302" },
         {
-          urls: "turn:turn.khoagay.com:3478",
-          username: "demo",
-          credential: "demopass"
-        }
-      ]
+          urls: "stun:something.meteredstun.ca:89032",
+        },
+        {
+          urls: "turn:global.relay.metered.ca:80",
+          username: "f6507426c0f4f89d0bda02e2",
+          credential: "7YF0907XexAfvkbL",
+        },
+        {
+          urls: "turn:global.relay.metered.ca:80?transport=tcp",
+          username: "f6507426c0f4f89d0bda02e2",
+          credential: "7YF0907XexAfvkbL",
+        },
+        {
+          urls: "turn:global.relay.metered.ca:443",
+          username: "f6507426c0f4f89d0bda02e2",
+          credential: "7YF0907XexAfvkbL",
+        },
+        {
+          urls: "turns:global.relay.metered.ca:443?transport=tcp",
+          username: "f6507426c0f4f89d0bda02e2",
+          credential: "7YF0907XexAfvkbL",
+        },
+      ],
     });
 
     pcRef.current = peerConnection;
