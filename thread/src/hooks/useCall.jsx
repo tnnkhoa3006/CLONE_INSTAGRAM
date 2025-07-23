@@ -61,35 +61,30 @@ export const useCall = (userId) => {
     if (!socket) return null;
     const peerConnection = new RTCPeerConnection({
       iceServers: [
+        // STUN server - luôn cần
         {
           urls: "stun:stun.l.google.com:19302"
         },
+
+        // Chỉ 1-2 TURN servers đáng tin cậy
+        // Option 1: OpenRelay (miễn phí, không cần đăng ký)
         {
-          urls: "turn:numb.viagenie.ca",
-          credential: "muazkh",
-          username: "webrtc@live.com"
+          urls: [
+            "turn:openrelay.metered.ca:80",
+            "turn:openrelay.metered.ca:80?transport=tcp"
+          ],
+          username: "openrelayproject",
+          credential: "openrelayproject"
         },
+
+        // Option 2: Backup TURN server
         {
-          urls: "turn:192.158.29.39:3478?transport=udp",
-          username: "28224511:1379330808",
-          credential: "JZEOEt2V3Qb0y27GRntt2u2PAYA="
-        },
-        {
-          urls: "turn:192.158.29.39:3478?transport=tcp",
-          username: "28224511:1379330808",
-          credential: "JZEOEt2V3Qb0y27GRntt2u2PAYA="
-        },
-        {
-          urls: "turn:turn.bistri.com:80",
-          username: "homeo",
-          credential: "homeo"
-        },
-        {
-          urls: "turn:turn.anyfirewall.com:443?transport=tcp",
-          username: "webrtc",
-          credential: "webrtc"
+          urls: "turn:relay1.expressturn.com:3478",
+          username: "ef6TE7LD2XB8BA5BF5",
+          credential: "FhGUhPgR2rr5cSb0"
         }
       ],
+      iceCandidatePoolSize: 10,
     });
 
     pcRef.current = peerConnection;
