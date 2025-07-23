@@ -62,28 +62,33 @@ export const useCall = (userId) => {
     const peerConnection = new RTCPeerConnection({
       iceServers: [
         {
-          urls: "stun:something.meteredstun.ca:89032",
+          urls: "stun:stun.l.google.com:19302"
         },
         {
-          urls: "turn:global.relay.metered.ca:80",
-          username: "f6507426c0f4f89d0bda02e2",
-          credential: "7YF0907XexAfvkbL",
+          urls: "turn:numb.viagenie.ca",
+          credential: "muazkh",
+          username: "webrtc@live.com"
         },
         {
-          urls: "turn:global.relay.metered.ca:80?transport=tcp",
-          username: "f6507426c0f4f89d0bda02e2",
-          credential: "7YF0907XexAfvkbL",
+          urls: "turn:192.158.29.39:3478?transport=udp",
+          username: "28224511:1379330808",
+          credential: "JZEOEt2V3Qb0y27GRntt2u2PAYA="
         },
         {
-          urls: "turn:global.relay.metered.ca:443",
-          username: "f6507426c0f4f89d0bda02e2",
-          credential: "7YF0907XexAfvkbL",
+          urls: "turn:192.158.29.39:3478?transport=tcp",
+          username: "28224511:1379330808",
+          credential: "JZEOEt2V3Qb0y27GRntt2u2PAYA="
         },
         {
-          urls: "turns:global.relay.metered.ca:443?transport=tcp",
-          username: "f6507426c0f4f89d0bda02e2",
-          credential: "7YF0907XexAfvkbL",
+          urls: "turn:turn.bistri.com:80",
+          username: "homeo",
+          credential: "homeo"
         },
+        {
+          urls: "turn:turn.anyfirewall.com:443?transport=tcp",
+          username: "webrtc",
+          credential: "webrtc"
+        }
       ],
     });
 
