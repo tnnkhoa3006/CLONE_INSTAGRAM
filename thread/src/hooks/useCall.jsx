@@ -35,11 +35,8 @@ export const useCall = (userId) => {
     });
 
     s.on("iceCandidate", async (data) => {
-      if (pcRef.current && data.candidate) {
-        await pcRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
-      }
+      if (pcRef.current && data.candidate) await pcRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
     });
-
     s.on("callEnded", () => {
       endCall(false);
     });
@@ -49,8 +46,8 @@ export const useCall = (userId) => {
     });
 
     return () => {
-      s.disconnect();
-      endCall(false);
+      s.disconnect()
+      endCall(false)
     };
   }, [userId]);
 
@@ -60,138 +57,64 @@ export const useCall = (userId) => {
     }
   }, [callState]);
 
-  // ✅ Handle remote stream changes
-  useEffect(() => {
-    if (remoteStream && remoteVideo.current) {
-      remoteVideo.current.srcObject = remoteStream;
-      remoteVideo.current.play().catch(e => console.log('Auto-play prevented:', e));
-    }
-  }, [remoteStream]);
-
   const createPeerConnection = useCallback(async (targetId) => {
     if (!socket) return null;
-
     const peerConnection = new RTCPeerConnection({
       iceServers: [
+        // STUN server - luôn cần
         { urls: "stun:stun.l.google.com:19302" },
-        { urls: "stun:stun1.l.google.com:19302" },
-        // ✅ Updated working TURN servers từ search
+        { urls: "stun:stun1.l.google.com:19302" }, // #2 - Google backup
+        { urls: "stun:stun2.l.google.com:19302" }, // #3 - Google backup
+        { urls: "stun:global.stun.twilio.com:3478" }, // #4 - Twilio
+        { urls: "stun:stun.cloudflare.com:3478" }, // #5 - Cloudflare
+        { urls: "stun:stun.nextcloud.com:443" },
+
+        // Chỉ 1-2 TURN servers đáng tin cậy
+        // Option 1: OpenRelay (miễn phí, không cần đăng ký)
         {
           urls: [
             "turn:openrelay.metered.ca:80",
-            "turn:openrelay.metered.ca:80?transport=tcp",
-            "turn:openrelay.metered.ca:443",
-            "turn:openrelay.metered.ca:443?transport=tcp"
+            "turn:openrelay.metered.ca:80?transport=tcp"
           ],
           username: "openrelayproject",
           credential: "openrelayproject"
         },
-        // ✅ ExpressTURN working credentials
+
+        // Option 2: Backup TURN server
         {
-          urls: [
-            "turn:relay1.expressturn.com:3478",
-            "turn:relay1.expressturn.com:3478?transport=tcp"
-          ],
+          urls: "turn:relay1.expressturn.com:3478",
           username: "ef6TE7LD2XB8BA5BF5",
           credential: "FhGUhPgR2rr5cSb0"
-        },
-        // ✅ Twilio fallback
-        {
-          urls: "turn:global.turn.twilio.com:3478?transport=udp",
-          username: "dc2d2894d5b7576bd7b35b52ad60fea5b24f70696d9c2b0c42cabb0d209b4735",
-          credential: "tE2DajzSJwnsSbc123"
         }
       ],
       iceCandidatePoolSize: 10,
-      iceTransportPolicy: 'all' // Trở lại all để test
+      iceTransportPolicy: 'all'
     });
 
     pcRef.current = peerConnection;
 
-    // ✅ DEBUG: Check connection type and state
-    peerConnection.oniceconnectionstatechange = () => {
-      console.log('ICE state:', peerConnection.iceConnectionState);
-
-      // Check if using TURN relay
-      peerConnection.getStats().then(stats => {
-        stats.forEach(stat => {
-          if (stat.type === 'candidate-pair' && stat.state === 'succeeded') {
-            console.log('Connection type:', stat.localCandidate?.type, '->', stat.remoteCandidate?.type);
-          }
-        });
-      });
-    };
-
-    peerConnection.onconnectionstatechange = () => {
-      console.log('Connection state:', peerConnection.connectionState);
-    };
-
     peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
-        console.log('🔄 ICE candidate:', event.candidate.type, event.candidate.address);
         socket.emit("iceCandidate", {
           candidate: event.candidate,
           to: targetId,
           from: userId,
         });
-      } else {
-        console.log('✅ ICE gathering complete');
       }
     };
-
-    // ✅ CRITICAL: Enhanced remote track handling for TURN
     peerConnection.ontrack = (event) => {
-      console.log('🎵 Received remote track:', event.track.kind, 'enabled:', event.track.enabled);
-
-      const [remoteStream] = event.streams;
-
-      // ✅ Force enable tracks (sometimes disabled over TURN)
-      event.track.enabled = true;
-
-      setRemoteStream(remoteStream);
-
-      if (remoteVideo.current) {
-        remoteVideo.current.srcObject = remoteStream;
-        remoteVideo.current.play().catch(e => console.log('Auto-play prevented:', e));
-      }
+      setRemoteStream(event.streams[0]);
     };
-
     try {
-      // ✅ Enhanced media constraints for TURN compatibility
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 640, max: 1280 },
-          height: { ideal: 480, max: 720 },
-          frameRate: { ideal: 30, max: 30 },
-          facingMode: "user"
-        },
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          sampleRate: 48000
-        }
-      });
-
-      console.log('📹 Local tracks:', stream.getTracks().map(t => `${t.kind}: ${t.enabled}`));
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       setLocalStream(stream);
-
       if (localVideo.current) {
         localVideo.current.srcObject = stream;
       }
-
-      // ✅ IMPORTANT: Use addTransceiver for better TURN compatibility
-      stream.getTracks().forEach((track) => {
-        const transceiver = peerConnection.addTransceiver(track, {
-          direction: 'sendrecv',
-          streams: [stream]
-        });
-        console.log('➕ Added transceiver:', track.kind, transceiver.direction);
-      });
-
+      stream.getTracks().forEach((track) => peerConnection.addTrack(track, stream));
       return peerConnection;
     } catch (err) {
-      console.error("❌ Failed to get media permissions", err);
+      console.error("Failed to get media permissions", err);
       setCallState('idle');
       return null;
     }
@@ -199,59 +122,31 @@ export const useCall = (userId) => {
 
   const call = useCallback(async (targetUserId, callerDetails) => {
     if (!targetUserId || !socket) return;
-
     remotePeerIdRef.current = targetUserId;
     setCallState("calling");
-
     const peerConnection = await createPeerConnection(targetUserId);
     if (peerConnection) {
-      // ✅ Wait a bit for tracks to be fully added
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      const offer = await peerConnection.createOffer({
-        offerToReceiveAudio: true,
-        offerToReceiveVideo: true
-      });
-
+      const offer = await peerConnection.createOffer();
       await peerConnection.setLocalDescription(offer);
-
-      console.log('📞 Sending offer with tracks:', offer.sdp.includes('m=audio'), offer.sdp.includes('m=video'));
-
-      socket.emit("callUser", {
-        offer,
-        to: targetUserId,
-        from: userId,
-        caller: callerDetails
-      });
+      socket.emit("callUser", { offer, to: targetUserId, from: userId, caller: callerDetails });
     }
   }, [createPeerConnection, socket, userId]);
 
   const accept = useCallback(async (offer, from) => {
     if (!offer || !from || !socket) return;
-
-    console.log('📥 Received offer with tracks:', offer.sdp.includes('m=audio'), offer.sdp.includes('m=video'));
-
     remotePeerIdRef.current = from;
     setCallState("in-call");
-
     const peerConnection = await createPeerConnection(from);
     if (peerConnection) {
       await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-
-      const answer = await peerConnection.createAnswer({
-        offerToReceiveAudio: true,
-        offerToReceiveVideo: true
-      });
-
+      const answer = await peerConnection.createAnswer();
       await peerConnection.setLocalDescription(answer);
-
-      console.log('📤 Sending answer with tracks:', answer.sdp.includes('m=audio'), answer.sdp.includes('m=video'));
-
       socket.emit("makeAnswer", { answer, to: from, from: userId });
+      setCallState("in-call");
     }
   }, [createPeerConnection, socket, userId]);
 
-  const endCall = useCallback((notifyPeer = true) => {
+  const endCall = (notifyPeer = true) => {
     if (notifyPeer && remotePeerIdRef.current && callStartTimeRef.current) {
       const durationMs = Date.now() - callStartTimeRef.current;
       const seconds = Math.floor((durationMs / 1000) % 60).toString().padStart(2, '0');
@@ -269,52 +164,41 @@ export const useCall = (userId) => {
       pcRef.current.close();
       pcRef.current = null;
     }
-
-    // ✅ Clean up local stream
-    if (localStream) {
-      localStream.getTracks().forEach(track => track.stop());
-    }
     if (localVideo.current && localVideo.current.srcObject) {
+      localVideo.current.srcObject.getTracks().forEach(track => track.stop());
       localVideo.current.srcObject = null;
     }
-
-    // ✅ Clean up remote stream
     if (remoteVideo.current && remoteVideo.current.srcObject) {
+      remoteVideo.current.srcObject.getTracks().forEach(track => track.stop());
       remoteVideo.current.srcObject = null;
     }
-
     if (notifyPeer && socket && remotePeerIdRef.current) {
-      socket.emit('endCall', { to: remotePeerIdRef.current });
+      socket.emit('endCall', { to: remotePeerIdRef.current })
     }
-
     setCallState("idle");
     setCallerInfo(null);
     setRemoteStream(null);
     setLocalStream(null);
     remotePeerIdRef.current = null;
     callStartTimeRef.current = null;
-    setIsMuted(false);
-    setIsVideoOff(false);
-  }, [localStream, socket]);
+  };
 
-  const toggleMicrophone = useCallback(() => {
-    if (localStream) {
-      localStream.getAudioTracks().forEach((track) => {
+  const toggleMicrophone = () => {
+    if (localVideo.current?.srcObject) {
+      localVideo.current.srcObject.getAudioTracks().forEach((track) => {
         track.enabled = !track.enabled;
         setIsMuted(!track.enabled);
       });
     }
-  }, [localStream]);
-
-  const toggleVideo = useCallback(() => {
-    if (localStream) {
-      localStream.getVideoTracks().forEach((track) => {
+  };
+  const toggleVideo = () => {
+    if (localVideo.current?.srcObject) {
+      localVideo.current.srcObject.getVideoTracks().forEach((track) => {
         track.enabled = !track.enabled;
         setIsVideoOff(!track.enabled);
       });
     }
-  }, [localStream]);
-
+  };
   return {
     callState,
     localVideo,
