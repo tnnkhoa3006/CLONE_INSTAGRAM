@@ -18,36 +18,48 @@ export const useCall = (userId) => {
 
   useEffect(() => {
     if (!userId) return;
-    // Announce this as a 'call' connection
+
     const s = createSocket(userId, 'call');
     setSocket(s);
 
     s.on("callMade", async (data) => {
+      console.log("Received callMade:", data);
       setCallState("receiving");
       setCallerInfo(data);
     });
 
     s.on("answerMade", async (data) => {
       if (pcRef.current) {
+        console.log("Received answer:", data.answer);
         await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
         setCallState("in-call");
       }
     });
 
     s.on("iceCandidate", async (data) => {
-      if (pcRef.current && data.candidate) await pcRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+      if (pcRef.current && data.candidate) {
+        console.log("Received ICE candidate:", data.candidate);
+        try {
+          await pcRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+        } catch (err) {
+          console.error("Error adding ICE candidate:", err);
+        }
+      }
     });
+
     s.on("callEnded", () => {
+      console.log("Call ended by remote peer");
       endCall(false);
     });
 
     s.on("callDeclined", () => {
+      console.log("Call declined by remote peer");
       setCallState("declined");
     });
 
     return () => {
-      s.disconnect()
-      endCall(false)
+      s.disconnect();
+      endCall(false);
     };
   }, [userId]);
 
@@ -57,44 +69,42 @@ export const useCall = (userId) => {
     }
   }, [callState]);
 
+  useEffect(() => {
+    if (remoteVideo.current && remoteStream) {
+      console.log("Assigning remote stream to video element");
+      remoteVideo.current.srcObject = remoteStream;
+    }
+  }, [remoteStream]);
+
   const createPeerConnection = useCallback(async (targetId) => {
     if (!socket) return null;
+
     const peerConnection = new RTCPeerConnection({
       iceServers: [
-        // STUN server - luôn cần
         { urls: "stun:stun.l.google.com:19302" },
-        { urls: "stun:stun1.l.google.com:19302" }, // #2 - Google backup
-        { urls: "stun:stun2.l.google.com:19302" }, // #3 - Google backup
-        { urls: "stun:global.stun.twilio.com:3478" }, // #4 - Twilio
-        { urls: "stun:stun.cloudflare.com:3478" }, // #5 - Cloudflare
-        { urls: "stun:stun.nextcloud.com:443" },
-
-        // Chỉ 1-2 TURN servers đáng tin cậy
-        // Option 1: OpenRelay (miễn phí, không cần đăng ký)
         {
           urls: [
             "turn:openrelay.metered.ca:80",
-            "turn:openrelay.metered.ca:80?transport=tcp"
+            "turn:openrelay.metered.ca:443",
+            "turn:openrelay.metered.ca:443?transport=tcp",
           ],
           username: "openrelayproject",
-          credential: "openrelayproject"
+          credential: "openrelayproject",
         },
-
-        // Option 2: Backup TURN server
         {
           urls: "turn:relay1.expressturn.com:3478",
           username: "ef6TE7LD2XB8BA5BF5",
-          credential: "FhGUhPgR2rr5cSb0"
-        }
+          credential: "FhGUhPgR2rr5cSb0",
+        },
       ],
       iceCandidatePoolSize: 10,
-      iceTransportPolicy: 'all'
     });
 
     pcRef.current = peerConnection;
 
     peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
+        console.log("Sending ICE candidate:", event.candidate);
         socket.emit("iceCandidate", {
           candidate: event.candidate,
           to: targetId,
@@ -102,11 +112,23 @@ export const useCall = (userId) => {
         });
       }
     };
+
     peerConnection.ontrack = (event) => {
+      console.log("Received remote track:", event.streams);
       setRemoteStream(event.streams[0]);
     };
+
+    peerConnection.oniceconnectionstatechange = () => {
+      console.log("ICE connection state:", peerConnection.iceConnectionState);
+      if (peerConnection.iceConnectionState === "failed") {
+        console.log("ICE connection failed, restarting...");
+        peerConnection.restartIce();
+      }
+    };
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      console.log("Local stream tracks:", stream.getTracks());
       setLocalStream(stream);
       if (localVideo.current) {
         localVideo.current.srcObject = stream;
@@ -114,7 +136,12 @@ export const useCall = (userId) => {
       stream.getTracks().forEach((track) => peerConnection.addTrack(track, stream));
       return peerConnection;
     } catch (err) {
-      console.error("Failed to get media permissions", err);
+      console.error("Failed to get media permissions:", err);
+      if (err.name === 'NotAllowedError') {
+        alert("Please grant permissions for microphone and camera.");
+      } else if (err.name === 'NotFoundError') {
+        alert("No camera or microphone found on this device.");
+      }
       setCallState('idle');
       return null;
     }
@@ -122,11 +149,16 @@ export const useCall = (userId) => {
 
   const call = useCallback(async (targetUserId, callerDetails) => {
     if (!targetUserId || !socket) return;
+    console.log("Calling user:", targetUserId);
     remotePeerIdRef.current = targetUserId;
     setCallState("calling");
     const peerConnection = await createPeerConnection(targetUserId);
     if (peerConnection) {
-      const offer = await peerConnection.createOffer();
+      const offer = await peerConnection.createOffer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: true,
+      });
+      console.log("Created offer:", offer);
       await peerConnection.setLocalDescription(offer);
       socket.emit("callUser", { offer, to: targetUserId, from: userId, caller: callerDetails });
     }
@@ -134,71 +166,80 @@ export const useCall = (userId) => {
 
   const accept = useCallback(async (offer, from) => {
     if (!offer || !from || !socket) return;
+    console.log("Accepting call from:", from, "with offer:", offer);
     remotePeerIdRef.current = from;
     setCallState("in-call");
     const peerConnection = await createPeerConnection(from);
     if (peerConnection) {
       await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
       const answer = await peerConnection.createAnswer();
+      console.log("Created answer:", answer);
       await peerConnection.setLocalDescription(answer);
       socket.emit("makeAnswer", { answer, to: from, from: userId });
       setCallState("in-call");
     }
   }, [createPeerConnection, socket, userId]);
 
-  const endCall = (notifyPeer = true) => {
+  const endCall = useCallback((notifyPeer = true) => {
+    console.log("Ending call...");
     if (notifyPeer && remotePeerIdRef.current && callStartTimeRef.current) {
       const durationMs = Date.now() - callStartTimeRef.current;
       const seconds = Math.floor((durationMs / 1000) % 60).toString().padStart(2, '0');
       const minutes = Math.floor((durationMs / (1000 * 60)) % 60).toString().padStart(2, '0');
       const hours = Math.floor((durationMs / (1000 * 60 * 60)) % 24).toString().padStart(2, '0');
       const durationStr = hours > 0 ? `${hours}:${minutes}:${seconds}` : `${minutes}:${seconds}`;
-
       api.post('/message/call-log', {
         receiverId: remotePeerIdRef.current,
-        duration: `Call ended, duration: ${durationStr}`
-      }).catch(err => console.error("Failed to log call", err));
+        duration: `Call ended, duration: ${durationStr}`,
+      }).catch(err => console.error("Failed to log call:", err));
     }
 
     if (pcRef.current) {
       pcRef.current.close();
       pcRef.current = null;
     }
-    if (localVideo.current && localVideo.current.srcObject) {
-      localVideo.current.srcObject.getTracks().forEach(track => track.stop());
-      localVideo.current.srcObject = null;
+
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+      setLocalStream(null);
     }
-    if (remoteVideo.current && remoteVideo.current.srcObject) {
-      remoteVideo.current.srcObject.getTracks().forEach(track => track.stop());
-      remoteVideo.current.srcObject = null;
+
+    if (remoteStream) {
+      remoteStream.getTracks().forEach(track => track.stop());
+      setRemoteStream(null);
     }
+
+    if (localVideo.current) localVideo.current.srcObject = null;
+    if (remoteVideo.current) remoteVideo.current.srcObject = null;
+
     if (notifyPeer && socket && remotePeerIdRef.current) {
-      socket.emit('endCall', { to: remotePeerIdRef.current })
+      socket.emit('endCall', { to: remotePeerIdRef.current });
     }
+
     setCallState("idle");
     setCallerInfo(null);
-    setRemoteStream(null);
-    setLocalStream(null);
     remotePeerIdRef.current = null;
     callStartTimeRef.current = null;
-  };
+  }, [localStream, remoteStream, socket, userId]);
 
   const toggleMicrophone = () => {
-    if (localVideo.current?.srcObject) {
-      localVideo.current.srcObject.getAudioTracks().forEach((track) => {
+    if (localStream) {
+      localStream.getAudioTracks().forEach((track) => {
         track.enabled = !track.enabled;
         setIsMuted(!track.enabled);
       });
     }
   };
+
   const toggleVideo = () => {
-    if (localVideo.current?.srcObject) {
-      localVideo.current.srcObject.getVideoTracks().forEach((track) => {
+    if (localStream) {
+      localStream.getVideoTracks().forEach((track) => {
         track.enabled = !track.enabled;
         setIsVideoOff(!track.enabled);
       });
     }
   };
+
   return {
     callState,
     localVideo,
