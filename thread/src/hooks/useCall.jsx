@@ -1,9 +1,10 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { createSocket } from "../sockets/socket";
+import { getXirsysIceServers } from "../utils/iceConfig";
 import api from '../services/axios';
 
 export const useCall = (userId) => {
-  const [callState, setCallState] = useState("idle"); // idle, calling, receiving, in-call
+  const [callState, setCallState] = useState("idle"); // idle, calling, receiving, in-call, declined
   const [socket, setSocket] = useState(null);
   const pcRef = useRef(null);
   const remotePeerIdRef = useRef(null);
@@ -19,8 +20,7 @@ export const useCall = (userId) => {
   useEffect(() => {
     if (!userId) return;
 
-    // Announce this as a 'call' connection
-    const s = createSocket(userId, 'call');
+    const s = createSocket(userId, "call");
     setSocket(s);
 
     s.on("callMade", async (data) => {
@@ -29,14 +29,26 @@ export const useCall = (userId) => {
     });
 
     s.on("answerMade", async (data) => {
-      if (pcRef.current) {
-        await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
-        setCallState("in-call");
+      if (pcRef.current?.signalingState === "have-local-offer") {
+        try {
+          await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+          setCallState("in-call");
+        } catch (err) {
+          console.error("❌ Failed to set remote answer:", err);
+        }
+      } else {
+        console.warn("⚠️ Skipped setRemoteDescription(answer): wrong state", pcRef.current?.signalingState);
       }
     });
 
     s.on("iceCandidate", async (data) => {
-      if (pcRef.current && data.candidate) await pcRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+      if (pcRef.current && data.candidate) {
+        try {
+          await pcRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+        } catch (err) {
+          console.error("❌ Failed to add ICE candidate", err);
+        }
+      }
     });
 
     s.on("callEnded", () => {
@@ -60,34 +72,17 @@ export const useCall = (userId) => {
   }, [callState]);
 
   const createPeerConnection = useCallback(async (targetId) => {
-    if (!socket) return null;
+    const iceServers = await getXirsysIceServers();
 
-    const peerConnection = new RTCPeerConnection({
-      iceServers: [
-        // STUN server
-        {
-          urls: "stun:stun.l.google.com:19302"
-        },
-        // Xirsys TURN server
-        {
-          urls: [
-            "turn:global.xirsys.net:80?transport=udp",
-            "turn:global.xirsys.net:3478?transport=udp",
-            "turn:global.xirsys.net:80?transport=tcp",
-            "turn:global.xirsys.net:3478?transport=tcp",
-            "turns:global.xirsys.net:443?transport=tcp"
-          ],
-          username: "khoaturn",
-          credential: "377eb266-686d-11f0-aec9-0242ac130003"
-        }
-      ],
+    const pc = new RTCPeerConnection({
+      iceServers,
       iceCandidatePoolSize: 10,
     });
 
-    pcRef.current = peerConnection;
+    pcRef.current = pc;
 
-    peerConnection.onicecandidate = (event) => {
-      if (event.candidate) {
+    pc.onicecandidate = (event) => {
+      if (event.candidate && socket) {
         socket.emit("iceCandidate", {
           candidate: event.candidate,
           to: targetId,
@@ -96,8 +91,19 @@ export const useCall = (userId) => {
       }
     };
 
-    peerConnection.ontrack = (event) => {
+    pc.ontrack = (event) => {
       setRemoteStream(event.streams[0]);
+      if (remoteVideo.current) {
+        remoteVideo.current.srcObject = event.streams[0];
+      }
+    };
+
+    pc.onconnectionstatechange = () => {
+      console.log("Connection state:", pc.connectionState);
+    };
+
+    pc.onsignalingstatechange = () => {
+      console.log("Signaling state:", pc.signalingState);
     };
 
     try {
@@ -106,10 +112,11 @@ export const useCall = (userId) => {
       if (localVideo.current) {
         localVideo.current.srcObject = stream;
       }
-      stream.getTracks().forEach((track) => peerConnection.addTrack(track, stream));
-      return peerConnection;
+
+      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+      return pc;
     } catch (err) {
-      console.error("Failed to get media permissions", err);
+      console.error("🎙️ Failed to get user media", err);
       setCallState('idle');
       return null;
     }
@@ -119,11 +126,17 @@ export const useCall = (userId) => {
     if (!targetUserId || !socket) return;
     remotePeerIdRef.current = targetUserId;
     setCallState("calling");
-    const peerConnection = await createPeerConnection(targetUserId);
-    if (peerConnection) {
-      const offer = await peerConnection.createOffer();
-      await peerConnection.setLocalDescription(offer);
-      socket.emit("callUser", { offer, to: targetUserId, from: userId, caller: callerDetails });
+
+    const pc = await createPeerConnection(targetUserId);
+    if (pc) {
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      socket.emit("callUser", {
+        offer,
+        to: targetUserId,
+        from: userId,
+        caller: callerDetails,
+      });
     }
   }, [createPeerConnection, socket, userId]);
 
@@ -131,13 +144,17 @@ export const useCall = (userId) => {
     if (!offer || !from || !socket) return;
     remotePeerIdRef.current = from;
     setCallState("in-call");
-    const peerConnection = await createPeerConnection(from);
-    if (peerConnection) {
-      await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-      const answer = await peerConnection.createAnswer();
-      await peerConnection.setLocalDescription(answer);
-      socket.emit("makeAnswer", { answer, to: from, from: userId });
-      setCallState("in-call");
+
+    const pc = await createPeerConnection(from);
+    if (pc) {
+      await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      socket.emit("makeAnswer", {
+        answer,
+        to: from,
+        from: userId,
+      });
     }
   }, [createPeerConnection, socket, userId]);
 
@@ -148,6 +165,7 @@ export const useCall = (userId) => {
       const minutes = Math.floor((durationMs / (1000 * 60)) % 60).toString().padStart(2, '0');
       const hours = Math.floor((durationMs / (1000 * 60 * 60)) % 24).toString().padStart(2, '0');
       const durationStr = hours > 0 ? `${hours}:${minutes}:${seconds}` : `${minutes}:${seconds}`;
+
       api.post('/message/call-log', {
         receiverId: remotePeerIdRef.current,
         duration: `Call ended, duration: ${durationStr}`
@@ -159,18 +177,15 @@ export const useCall = (userId) => {
       pcRef.current = null;
     }
 
-    if (localVideo.current && localVideo.current.srcObject) {
-      localVideo.current.srcObject.getTracks().forEach(track => track.stop());
-      localVideo.current.srcObject = null;
-    }
-
-    if (remoteVideo.current && remoteVideo.current.srcObject) {
-      remoteVideo.current.srcObject.getTracks().forEach(track => track.stop());
-      remoteVideo.current.srcObject = null;
-    }
+    [localVideo, remoteVideo].forEach(videoRef => {
+      if (videoRef.current?.srcObject) {
+        videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+        videoRef.current.srcObject = null;
+      }
+    });
 
     if (notifyPeer && socket && remotePeerIdRef.current) {
-      socket.emit('endCall', { to: remotePeerIdRef.current });
+      socket.emit("endCall", { to: remotePeerIdRef.current });
     }
 
     setCallState("idle");
@@ -183,7 +198,7 @@ export const useCall = (userId) => {
 
   const toggleMicrophone = () => {
     if (localVideo.current?.srcObject) {
-      localVideo.current.srcObject.getAudioTracks().forEach((track) => {
+      localVideo.current.srcObject.getAudioTracks().forEach(track => {
         track.enabled = !track.enabled;
         setIsMuted(!track.enabled);
       });
@@ -192,7 +207,7 @@ export const useCall = (userId) => {
 
   const toggleVideo = () => {
     if (localVideo.current?.srcObject) {
-      localVideo.current.srcObject.getVideoTracks().forEach((track) => {
+      localVideo.current.srcObject.getVideoTracks().forEach(track => {
         track.enabled = !track.enabled;
         setIsVideoOff(!track.enabled);
       });
