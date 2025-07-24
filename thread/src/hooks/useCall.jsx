@@ -75,27 +75,35 @@ export const useCall = (userId) => {
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
         { urls: "stun:stun1.l.google.com:19302" },
-        // ✅ Metered.ca TURN - more reliable
+        // ✅ Updated working TURN servers từ search
         {
           urls: [
-            "turn:a.relay.metered.ca:80",
-            "turn:a.relay.metered.ca:80?transport=tcp",
-            "turn:a.relay.metered.ca:443",
-            "turn:a.relay.metered.ca:443?transport=tcp"
+            "turn:openrelay.metered.ca:80",
+            "turn:openrelay.metered.ca:80?transport=tcp",
+            "turn:openrelay.metered.ca:443",
+            "turn:openrelay.metered.ca:443?transport=tcp"
           ],
-          username: "85d4e9b4e6d881ba",
-          credential: "RGKVz2kmmfHaVZEO"
+          username: "openrelayproject",
+          credential: "openrelayproject"
         },
-        // ✅ Backup TURN servers
+        // ✅ ExpressTURN working credentials
         {
-          urls: "turn:relay1.expressturn.com:3478",
+          urls: [
+            "turn:relay1.expressturn.com:3478",
+            "turn:relay1.expressturn.com:3478?transport=tcp"
+          ],
           username: "ef6TE7LD2XB8BA5BF5",
           credential: "FhGUhPgR2rr5cSb0"
+        },
+        // ✅ Twilio fallback
+        {
+          urls: "turn:global.turn.twilio.com:3478?transport=udp",
+          username: "dc2d2894d5b7576bd7b35b52ad60fea5b24f70696d9c2b0c42cabb0d209b4735",
+          credential: "tE2DajzSJwnsSbc123"
         }
       ],
       iceCandidatePoolSize: 10,
-      // ✅ Force relay if direct connection fails
-      iceTransportPolicy: 'all'
+      iceTransportPolicy: 'all' // Trở lại all để test
     });
 
     pcRef.current = peerConnection;
