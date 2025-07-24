@@ -67,17 +67,17 @@ export const useCall = (userId) => {
       iceServers: [
         { urls: ["stun:hk-turn1.xirsys.com"] },
         {
-          username: "22v__YRWgtsXXVqdB8_JiTt85SkJ9XtNqBuQTFPBW0iRsJ37wWTlDs3cLSJYzdwmAAAAAGiCUGpraG9hdHVybg==",
-          credential: "6f06ce46-68a2-11f0-abfa-0242ac120004",
+          username: "stmNecCnUni54vJnkhdftQWivGNpRVk_Fylr0yuj7s5inUC72wzGOPktqRs0lIEfAAAAAGiCV8RraG9hdHVybg==",
+          credential: "d0b3a872-68a6-11f0-9563-0242ac120004",
           urls: [
             "turn:hk-turn1.xirsys.com:80?transport=udp",
             "turn:hk-turn1.xirsys.com:3478?transport=udp",
             "turn:hk-turn1.xirsys.com:80?transport=tcp",
             "turn:hk-turn1.xirsys.com:3478?transport=tcp",
             "turns:hk-turn1.xirsys.com:443?transport=tcp",
-            "turns:hk-turn1.xirsys.com:5349?transport=tcp",
-          ],
-        },
+            "turns:hk-turn1.xirsys.com:5349?transport=tcp"
+          ]
+        }
       ],
       iceCandidatePoolSize: 10,
     });
