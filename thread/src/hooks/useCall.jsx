@@ -80,6 +80,7 @@ export const useCall = (userId) => {
         }
       ],
       iceCandidatePoolSize: 10,
+      iceTransportPolicy: "relay",
     });
 
     pcRef.current = peerConnection;
