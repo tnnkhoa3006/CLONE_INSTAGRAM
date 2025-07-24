@@ -65,22 +65,30 @@ export const useCall = (userId) => {
 
     const peerConnection = new RTCPeerConnection({
       iceServers: [
-        { urls: ["stun:hk-turn1.xirsys.com"] },
         {
-          username: "stmNecCnUni54vJnkhdftQWivGNpRVk_Fylr0yuj7s5inUC72wzGOPktqRs0lIEfAAAAAGiCV8RraG9hdHVybg==",
-          credential: "d0b3a872-68a6-11f0-9563-0242ac120004",
-          urls: [
-            "turn:hk-turn1.xirsys.com:80?transport=udp",
-            "turn:hk-turn1.xirsys.com:3478?transport=udp",
-            "turn:hk-turn1.xirsys.com:80?transport=tcp",
-            "turn:hk-turn1.xirsys.com:3478?transport=tcp",
-            "turns:hk-turn1.xirsys.com:443?transport=tcp",
-            "turns:hk-turn1.xirsys.com:5349?transport=tcp"
-          ]
-        }
+          urls: "stun:stun.relay.metered.ca:80",
+        },
+        {
+          urls: "turn:jp.relay.metered.ca:80",
+          username: "0922412337f8bab8aa7e9a18",
+          credential: "xO82R/RQLy4k6CPO",
+        },
+        {
+          urls: "turn:jp.relay.metered.ca:80?transport=tcp",
+          username: "0922412337f8bab8aa7e9a18",
+          credential: "xO82R/RQLy4k6CPO",
+        },
+        {
+          urls: "turn:jp.relay.metered.ca:443",
+          username: "0922412337f8bab8aa7e9a18",
+          credential: "xO82R/RQLy4k6CPO",
+        },
+        {
+          urls: "turns:jp.relay.metered.ca:443?transport=tcp",
+          username: "0922412337f8bab8aa7e9a18",
+          credential: "xO82R/RQLy4k6CPO",
+        },
       ],
-      iceCandidatePoolSize: 10,
-      iceTransportPolicy: "relay",
     });
 
     pcRef.current = peerConnection;
