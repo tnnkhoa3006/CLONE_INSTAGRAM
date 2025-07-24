@@ -3,7 +3,7 @@ import { createSocket } from "../sockets/socket";
 import api from '../services/axios';
 
 export const useCall = (userId) => {
-  const [callState, setCallState] = useState("idle"); // idle, calling, receiving, in-call
+  const [callState, setCallState] = useState("idle");
   const [socket, setSocket] = useState(null);
   const pcRef = useRef(null);
   const remotePeerIdRef = useRef(null);
@@ -31,8 +31,12 @@ export const useCall = (userId) => {
     s.on("answerMade", async (data) => {
       if (pcRef.current) {
         console.log("Received answer:", data.answer);
-        await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
-        setCallState("in-call");
+        try {
+          await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+          setCallState("in-call");
+        } catch (err) {
+          console.error("Error setting remote description:", err);
+        }
       }
     });
 
@@ -71,8 +75,9 @@ export const useCall = (userId) => {
 
   useEffect(() => {
     if (remoteVideo.current && remoteStream) {
-      console.log("Assigning remote stream to video element");
+      console.log("Assigning remote stream to video element:", remoteStream.getTracks());
       remoteVideo.current.srcObject = remoteStream;
+      remoteVideo.current.play().catch(err => console.error("Error playing remote video:", err));
     }
   }, [remoteStream]);
 
@@ -92,12 +97,22 @@ export const useCall = (userId) => {
           credential: "openrelayproject",
         },
         {
-          urls: "turn:relay1.expressturn.com:3478",
+          urls: [
+            "turn:relay1.expressturn.com:3478",
+            "turn:relay1.expressturn.com:3478?transport=tcp",
+          ],
           username: "ef6TE7LD2XB8BA5BF5",
           credential: "FhGUhPgR2rr5cSb0",
         },
+        // Thêm TURN server dự phòng nếu cần
+        {
+          urls: "turn:turn.example.com:3478", // Thay bằng TURN server khác nếu có
+          username: "your-username",
+          credential: "your-credential",
+        },
       ],
       iceCandidatePoolSize: 10,
+      iceTransportPolicy: "all", // Thử cả relay nếu cần
     });
 
     pcRef.current = peerConnection;
@@ -114,15 +129,19 @@ export const useCall = (userId) => {
     };
 
     peerConnection.ontrack = (event) => {
-      console.log("Received remote track:", event.streams);
+      console.log("Received remote track:", event.streams, "Tracks:", event.streams[0].getTracks());
       setRemoteStream(event.streams[0]);
     };
 
     peerConnection.oniceconnectionstatechange = () => {
-      console.log("ICE connection state:", peerConnection.iceConnectionState);
-      if (peerConnection.iceConnectionState === "failed") {
-        console.log("ICE connection failed, restarting...");
+      const state = peerConnection.iceConnectionState;
+      console.log("ICE connection state:", state);
+      if (state === "failed" || state === "disconnected") {
+        console.log("ICE connection failed or disconnected, restarting...");
         peerConnection.restartIce();
+      }
+      if (state === "closed" || state === "disconnected") {
+        endCall(false);
       }
     };
 
@@ -132,6 +151,7 @@ export const useCall = (userId) => {
       setLocalStream(stream);
       if (localVideo.current) {
         localVideo.current.srcObject = stream;
+        localVideo.current.play().catch(err => console.error("Error playing local video:", err));
       }
       stream.getTracks().forEach((track) => peerConnection.addTrack(track, stream));
       return peerConnection;
@@ -171,12 +191,17 @@ export const useCall = (userId) => {
     setCallState("in-call");
     const peerConnection = await createPeerConnection(from);
     if (peerConnection) {
-      await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-      const answer = await peerConnection.createAnswer();
-      console.log("Created answer:", answer);
-      await peerConnection.setLocalDescription(answer);
-      socket.emit("makeAnswer", { answer, to: from, from: userId });
-      setCallState("in-call");
+      try {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await peerConnection.createAnswer();
+        console.log("Created answer:", answer);
+        await peerConnection.setLocalDescription(answer);
+        socket.emit("makeAnswer", { answer, to: from, from: userId });
+        setCallState("in-call");
+      } catch (err) {
+        console.error("Error accepting call:", err);
+        endCall(false);
+      }
     }
   }, [createPeerConnection, socket, userId]);
 
