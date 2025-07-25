@@ -24,30 +24,39 @@ export const getReceiverSocketId = (receiverId) => {
 
 io.on('connection', (socket) => {
     const userId = socket.handshake.query.userId;
-    console.log('New socket connection attempt:', socket.id, socket.handshake.query.userId);
+    console.log('New socket connection attempt:', socket.id, userId);
     
-    if (userId) {
-        userSocketMap[userId] = socket.id;
-        console.log(`User connected: ${userId}, socketId: ${socket.id}`);
-        
-        socket.emit('userConnected', { userId, socketId: socket.id });
-    } else {
-        console.log('Connection without userId');
+    if (!userId) {
+        console.log('Connection rejected - no userId');
+        socket.disconnect();
+        return;
     }
 
-    io.emit('getOnlineUsers', Object.keys(userSocketMap));
-
-    socket.on('disconnect', (reason) => {
-        console.log(`Socket disconnected: ${socket.id}, reason: ${reason}`);
-        if (userId && userSocketMap[userId]) {
-            delete userSocketMap[userId];
-            console.log(`User disconnected: ${userId}`);
-        }
-        io.emit('getOnlineUsers', Object.keys(userSocketMap));
-    });
+    try {
+        userSocketMap[userId] = socket.id;
+        console.log(`User connected: ${userId}, socketId: ${socket.id}`);
+        socket.emit('userConnected', { userId, socketId: socket.id });
+    } catch (err) {
+        console.error('Error handling connection:', err);
+        socket.disconnect();
+        return;
+    }
 
     socket.on('error', (error) => {
         console.error('Socket error:', error);
+    });
+
+    socket.on('disconnect', (reason) => {
+        console.log(`Socket disconnected: ${socket.id}, reason: ${reason}`);
+        try {
+            if (userId && userSocketMap[userId]) {
+                delete userSocketMap[userId];
+                console.log(`User disconnected: ${userId}`);
+                io.emit('getOnlineUsers', Object.keys(userSocketMap));
+            }
+        } catch (err) {
+            console.error('Error handling disconnect:', err);
+        }
     });
 
     // khi user gọi user khác
