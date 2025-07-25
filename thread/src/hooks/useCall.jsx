@@ -65,16 +65,15 @@ export const useCall = (userId) => {
 
     const peerConnection = new RTCPeerConnection({
       iceServers: [
-        {
-          urls: "stun:stun.relay.metered.ca:80",
-        },
+        // Free STUN servers
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun2.l.google.com:19302" },
+        { urls: "stun:stun3.l.google.com:19302" },
+        { urls: "stun:stun4.l.google.com:19302" },
+        // Your existing TURN servers
         {
           urls: "turn:jp.relay.metered.ca:80",
-          username: "0922412337f8bab8aa7e9a18",
-          credential: "xO82R/RQLy4k6CPO",
-        },
-        {
-          urls: "turn:jp.relay.metered.ca:80?transport=tcp",
           username: "0922412337f8bab8aa7e9a18",
           credential: "xO82R/RQLy4k6CPO",
         },
@@ -84,12 +83,22 @@ export const useCall = (userId) => {
           credential: "xO82R/RQLy4k6CPO",
         },
         {
-          urls: "turns:jp.relay.metered.ca:443?transport=tcp",
+          urls: "turn:jp.relay.metered.ca:443?transport=tcp",
           username: "0922412337f8bab8aa7e9a18",
           credential: "xO82R/RQLy4k6CPO",
         },
       ],
+      iceCandidatePoolSize: 10,
     });
+
+    // Add ICE connection monitoring
+    peerConnection.oniceconnectionstatechange = () => {
+      console.log("ICE Connection State:", peerConnection.iceConnectionState);
+    };
+
+    peerConnection.onicegatheringstatechange = () => {
+      console.log("ICE Gathering State:", peerConnection.iceGatheringState);
+    };
 
     pcRef.current = peerConnection;
 
