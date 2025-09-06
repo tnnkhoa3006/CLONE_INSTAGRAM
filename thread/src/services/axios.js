@@ -8,6 +8,15 @@ const api = axios.create({
   withCredentials: true, // Để gửi cookie (token, refreshToken)
 });
 
+// Interceptor cho request
+api.interceptors.request.use((config) => {
+  const token = document.cookie.split('; ').find(row => row.startsWith('token='));
+  if (token) {
+    config.headers.Authorization = `Bearer ${token.split('=')[1]}`;
+  }
+  return config;
+});
+
 // Interceptor cho response
 api.interceptors.response.use(
   res => res,

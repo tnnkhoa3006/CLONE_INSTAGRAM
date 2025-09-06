@@ -42,10 +42,15 @@ const Login = () => {
       });
 
       if (res.data.success) {
+        // Token sẽ được tự động lưu vào cookie từ response
         dispatch(setAuthUser(res.data.user));
         toast.success(res.data.message);
         setInputText({ email: '', password: '' });
-        navigate('/');
+        
+        // Đảm bảo token được set trước khi chuyển trang
+        setTimeout(() => {
+          navigate('/');
+        }, 100);
       } else {
         toast.error(res.data.message || "Login failed");
       }
