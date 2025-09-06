@@ -10,11 +10,41 @@ router.post('/refresh-token', (req, res) => {
 
   try {
     const payload = verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-    const accessToken = sign({ id: payload.id }, process.env.JWT_SECRET, { expiresIn: "15m" });
-    res.cookie("token", accessToken, { httpOnly: true, sameSite: "none", secure: true, maxAge: 15*60*1000 });
-    res.json({ accessToken });
+    
+    // Tạo token mới
+    const accessToken = sign({ id: payload.id }, process.env.JWT_SECRET, { expiresIn: "5m" });
+    const newRefreshToken = sign({ id: payload.id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: "7d" });
+
+    // Set cả access token và refresh token mới
+    res
+      .cookie("token", accessToken, {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+        maxAge: 5 * 60 * 1000
+      })
+      .cookie("refreshToken", newRefreshToken, {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60 * 1000
+      })
+      .json({
+        success: true,
+        accessToken,
+        message: 'Tokens refreshed successfully'
+      });
   } catch (err) {
-    return res.status(403).json({ message: 'Invalid or expired refresh token' });
+    // Xóa cookie cũ nếu refresh token không hợp lệ
+    res
+      .cookie("token", null, { httpOnly: true, sameSite: "none", secure: true, maxAge: 0 })
+      .cookie("refreshToken", null, { httpOnly: true, sameSite: "none", secure: true, maxAge: 0 })
+      .status(403)
+      .json({ 
+        success: false,
+        message: 'Invalid or expired refresh token' 
+      });
   }
 });
 
