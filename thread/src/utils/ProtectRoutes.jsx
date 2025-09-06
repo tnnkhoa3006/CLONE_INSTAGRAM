@@ -9,7 +9,7 @@ const ProtectRoutes = ({children}) => {
         if(!user){
             navigate('/login')
         }
-    })
+    }, [user, navigate])
   return (
     <div>{children}</div>
   )

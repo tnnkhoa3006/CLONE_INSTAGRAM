@@ -42,15 +42,15 @@ const Login = () => {
       });
 
       if (res.data.success) {
-        // Token sẽ được tự động lưu vào cookie từ response
-        dispatch(setAuthUser(res.data.user));
-        toast.success(res.data.message);
-        setInputText({ email: '', password: '' });
-        
-        // Đảm bảo token được set trước khi chuyển trang
-        setTimeout(() => {
+        const userData = res.data.user;
+        if (userData && Object.keys(userData).length > 0) {
+          dispatch(setAuthUser(userData));
+          toast.success(res.data.message);
+          setInputText({ email: '', password: '' });
           navigate('/');
-        }, 100);
+        } else {
+          toast.error("Invalid user data received");
+        }
       } else {
         toast.error(res.data.message || "Login failed");
       }
@@ -63,7 +63,7 @@ const Login = () => {
   };
 
   useEffect(() => {
-    if (user) {
+    if (user && Object.keys(user).length > 0) {
       navigate('/');
     }
   }, [user, navigate]);
