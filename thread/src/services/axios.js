@@ -23,14 +23,16 @@ api.interceptors.response.use(
   async error => {
     const originalRequest = error.config;
 
+    // Chỉ thử refresh token một lần
     if (
       error.response?.status === 401 &&
-      !originalRequest._retry
+      !originalRequest._retry &&
+      !originalRequest.url.includes('/auth/refresh-token')  // Tránh vòng lặp vô hạn
     ) {
       originalRequest._retry = true;
 
       try {
-        await axios.post(
+        const refreshResponse = await axios.post(
           "/auth/refresh-token",
           {},
           {
@@ -39,9 +41,15 @@ api.interceptors.response.use(
           }
         );
 
-        // AccessToken đã được set lại vào cookie → không cần lưu vào localStorage hay set header
-        return api(originalRequest); // gửi lại request cũ
+        if (refreshResponse.data.accessToken) {
+          // Nếu refresh token thành công, thử lại request ban đầu
+          return api(originalRequest);
+        }
       } catch (refreshError) {
+        // Nếu refresh token thất bại, xóa user state và chuyển về login
+        localStorage.removeItem('user');
+        const event = new Event('token-expired');
+        window.dispatchEvent(event);
         window.location.href = "/login";
         return Promise.reject(refreshError);
       }

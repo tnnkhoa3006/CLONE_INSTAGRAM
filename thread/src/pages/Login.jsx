@@ -63,10 +63,21 @@ const Login = () => {
   };
 
   useEffect(() => {
+    // Xử lý khi token hết hạn
+    const handleTokenExpired = () => {
+      dispatch(setAuthUser(null));
+    };
+
+    window.addEventListener('token-expired', handleTokenExpired);
+
     if (user && Object.keys(user).length > 0) {
       navigate('/');
     }
-  }, [user, navigate]);
+
+    return () => {
+      window.removeEventListener('token-expired', handleTokenExpired);
+    };
+  }, [user, navigate, dispatch]);
 
   return (
     <section className="w-screen min-h-screen bg-black flex flex-col">
