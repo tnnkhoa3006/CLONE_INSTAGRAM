@@ -9,9 +9,12 @@ const CenterSide = () => {
   const { user } = useSelector((store) => store.auth);
   const navigate = useNavigate();
 
+  // Đảm bảo following luôn là array
+  const followingArray = Array.isArray(user?.following) ? user.following : [];
+  
   // Danh sách stories: chính mình + những người đang follow
   const stories = user
-    ? [user, ...(user.following || [])].filter((storyUser) => {
+    ? [user, ...followingArray].filter((storyUser) => {
         return storyUser && storyUser._id && storyUser.username;
       })
     : [];

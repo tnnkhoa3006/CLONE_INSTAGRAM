@@ -92,7 +92,7 @@ const Dialogmore_option = ({ isOpen, onClose, post }) => {
         <div>
           {user &&
             user._id !== currentPost.author._id &&
-            (user.following.some((f) =>
+            (user.following && Array.isArray(user.following) && user.following.some((f) =>
               typeof f === "object" ? f._id === currentPost.author._id : f === currentPost.author._id
             ) ? (
               <button
@@ -117,7 +117,7 @@ const Dialogmore_option = ({ isOpen, onClose, post }) => {
           "Copy link",
           "Embed",
           "About this account",
-       ].map((label, index) => (
+        ].map((label, index) => (
           <div className="w-full border-b-[1px] border-zinc-700 py-2 md:py-3" key={index}>
             <button className="w-full text-sm font-medium text-center">{label}</button>
           </div>

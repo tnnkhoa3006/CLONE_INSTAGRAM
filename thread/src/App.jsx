@@ -34,18 +34,13 @@ function AppContent() {
   const location = useLocation();
   const dispatch = useDispatch();
 
-  const isValidUser = user && user._id && Object.keys(user).length > 0;
-
-  // Gọi các custom hook ở đây
-  if (isValidUser) {
-    useGetAllPost();
-    useGetAllMessage();
-    useGetRTM();
-    useSocket(user);
-    useListenPostLike();
-    useListenComment();
-    useListenPostDelete();
-  }
+  useGetAllPost();
+  useGetAllMessage();
+  useGetRTM();
+  useSocket(user);
+  useListenPostLike();
+  useListenComment();
+  useListenPostDelete();
   
   const handleAcceptCall = () => {
     if (!incomingCall || !incomingCall.caller) return;
