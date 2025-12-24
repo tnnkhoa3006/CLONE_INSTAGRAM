@@ -42,7 +42,7 @@ function AppContent() {
   useListenPostLike();
   useListenComment();
   useListenPostDelete();
-
+  
   const handleAcceptCall = () => {
     if (!incomingCall || !incomingCall.caller) return;
     const { from, offer, caller } = incomingCall;

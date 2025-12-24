@@ -1,3 +1,4 @@
+// thread/src/services/axios.js
 import axios from "axios";
 
 const api = axios.create({
@@ -5,14 +6,17 @@ const api = axios.create({
     process.env.NODE_ENV === "production"
       ? "https://clone-instagram-117m.onrender.com/api/v1"
       : "http://localhost:5000/api/v1",
-  withCredentials: true, // Để gửi cookie (token, refreshToken)
+  withCredentials: true,
 });
 
 // Interceptor cho request
 api.interceptors.request.use((config) => {
+  // Không cần đặt Authorization header nữa vì backend đọc từ cookie
+  // Nhưng giữ lại để backup nếu cần
   const token = document.cookie.split('; ').find(row => row.startsWith('token='));
   if (token) {
-    config.headers.Authorization = `Bearer ${token.split('=')[1]}`;
+    const tokenValue = token.split('=')[1];
+    config.headers.Authorization = `Bearer ${tokenValue}`;
   }
   return config;
 });
@@ -23,31 +27,31 @@ api.interceptors.response.use(
   async error => {
     const originalRequest = error.config;
 
-    // Chỉ thử refresh token một lần
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url.includes('/auth/refresh-token')  // Tránh vòng lặp vô hạn
+      !originalRequest.url.includes('/auth/refresh-token') &&
+      !originalRequest.url.includes('/user/login') &&
+      !originalRequest.url.includes('/user/register')
     ) {
       originalRequest._retry = true;
 
       try {
         const refreshResponse = await axios.post(
-          "/auth/refresh-token",
+          `${api.defaults.baseURL}/auth/refresh-token`,
           {},
           {
-            baseURL: api.defaults.baseURL,
             withCredentials: true,
           }
         );
 
-        if (refreshResponse.data.accessToken) {
-          // Nếu refresh token thành công, thử lại request ban đầu
+        if (refreshResponse.data.success) {
+          // Retry original request
           return api(originalRequest);
         }
       } catch (refreshError) {
-        // Nếu refresh token thất bại, xóa user state và chuyển về login
-        localStorage.removeItem('user');
+        // Nếu refresh token thất bại, clear state và redirect
+        localStorage.removeItem('persist:root');
         const event = new Event('token-expired');
         window.dispatchEvent(event);
         window.location.href = "/login";
