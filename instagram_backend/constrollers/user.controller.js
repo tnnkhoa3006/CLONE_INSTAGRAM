@@ -102,19 +102,29 @@ export const login = async (req, res) => {
     const accessToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "5m" });
     const refreshToken = jwt.sign({ id: user._id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: "7d" });
 
+    // Xác định cookie options dựa trên môi trường
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieOptions = {
+      httpOnly: true,
+      sameSite: isProduction ? "none" : "lax", // "none" cho production (cross-site), "lax" cho dev
+      secure: isProduction, // true cho HTTPS, false cho HTTP local
+      path: "/",
+    };
+
+    console.log('Login successful - Setting cookies:', {
+      origin: req.headers.origin,
+      isProduction,
+      cookieOptions
+    });
+
     return res
       .cookie("token", accessToken, {
-        httpOnly: true,
-        sameSite: "none",   // PHẢI là "none"
-        secure: true,       // PHẢI là true
-        maxAge: 5 * 60 * 1000
+        ...cookieOptions,
+        maxAge: 5 * 60 * 1000 // 5 phút
       })
       .cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        sameSite: "none",
-        secure: true,
-        path: "/",
-        maxAge: 7 * 24 * 60 * 60 * 1000
+        ...cookieOptions,
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 ngày
       })
       .json({
         message: `welcome back ${user.username}`,
@@ -123,7 +133,11 @@ export const login = async (req, res) => {
       });
 
   } catch (error) {
-    console.log(error);
+    console.error("Login error:", error);
+    return res.status(500).json({
+      message: "Server error during login.",
+      success: false
+    });
   }
 }
 
